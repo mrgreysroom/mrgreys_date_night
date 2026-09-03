@@ -1,0 +1,34 @@
+MR GREY'S DATE NIGHT — V12 FINAL SALE READY — LAUNCH CHECKLIST
+
+CODE AUDIT PASSED
+[✓] API JavaScript syntax valid
+[✓] Inline page JavaScript syntax valid
+[✓] Checkout email validation fixed
+[✓] Checkout rejects unknown products
+[✓] Checkout has defensive Stripe/network error handling
+[✓] Duplicate/broken Magic Link frontend handler removed
+[✓] Magic Link 60-second resend cooldown uses real page element IDs
+[✓] 300 card datasets are identical between demo source and paid game source
+[✓] ROMANTIC 60 / SECRETS 80 / DARE 80 / AFTER DARK 80
+[✓] Exactly 4 SPECIAL X per pack = 16 total
+[✓] Demo source selects 4 cards per pack and its 3rd card is SPECIAL X
+[✓] Buyer email required before Stripe Checkout
+[✓] Signed Stripe webhook only unlocks paid sessions
+[✓] Supabase entitlement upsert is idempotent by stripe_session_id
+[✓] MailerLite failures do not block paid entitlement
+[✓] Optional explicit marketing consent wired to DATE NIGHT · MARKETING CONSENT
+[✓] X COMPLETE entitlement unlocks all packs and MIX MODE
+[✓] Final Stripe return URLs use datenight.mrgreysroom.sk
+
+PRODUCTION CHECKS STILL REQUIRED AFTER DEPLOY
+[ ] All 9 Vercel environment variables present
+[ ] Redeploy completed after environment variable changes
+[ ] datenight.mrgreysroom.sk assigned to this project
+[ ] Stripe webhook endpoint remains https://datenight.mrgreysroom.sk/api/stripe-webhook
+[ ] One real purchase opens Stripe Checkout successfully
+[ ] Paid purchase creates/returns entitlement in My Games
+[ ] Magic Link actually reaches Gmail and authenticates the user
+[ ] iPhone/mobile smoke test passed
+
+CURRENT EXTERNAL BLOCKER KNOWN DURING PRE-LAUNCH TESTING
+- Magic Link delivery is not yet proven because even ordinary mail from info@mrgreysroom.sk to Gmail failed to arrive. This is SMTP/delivery infrastructure, not a Vercel frontend issue. Do not start paid traffic until a Magic Link is successfully delivered and tested end-to-end.

@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#070609"><title>Moje hry · Mr Grey's Date Night</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% 5%,rgba(177,55,241,.2),transparent 25%),linear-gradient(#050507,#09070b 65%,#050507);color:#f8f5fa;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;min-height:100vh}
+.wrap{max-width:560px;margin:auto;padding:26px 18px 60px}.brand{text-align:center}.brand img{width:118px;height:118px;object-fit:contain;mix-blend-mode:screen}.brandline{font-size:10px;letter-spacing:.27em;color:#d8d1db}
+h1{font-size:39px;line-height:1.02;text-align:center;margin:18px 0 9px}.sub{text-align:center;color:#aaa1ae;line-height:1.5;margin:0 auto 22px}
+.panel{border:1px solid rgba(255,255,255,.09);border-radius:26px;padding:22px;background:linear-gradient(145deg,#121016,#09080b);margin-top:18px}
+label{font-size:13px;font-weight:850}input{width:100%;min-height:58px;margin-top:9px;border-radius:16px;border:1.5px solid rgba(194,75,245,.45);background:#151219;color:#fff;padding:0 16px;font-size:17px;outline:none}input:focus{border-color:#ca53f8;box-shadow:0 0 0 3px rgba(187,66,244,.13)}button,.btn{width:100%;min-height:56px;border:0;border-radius:16px;margin-top:11px;background:linear-gradient(135deg,#8425c9,#c44cf3);color:#fff;font-weight:900;font-size:15px;cursor:pointer;text-decoration:none;display:flex;align-items:center;justify-content:center}.secondary{background:#18161c;border:1px solid rgba(255,255,255,.09)}.msg{font-size:12px;line-height:1.45;color:#aaa1ae;margin:12px 2px 0;text-align:center}
+.games{display:grid;gap:11px;margin-top:15px}.game{border:1px solid rgba(255,255,255,.09);border-radius:19px;padding:16px;background:#111015;display:flex;align-items:center;justify-content:space-between;gap:14px}.game strong{font-size:16px}.status{font-size:11px;font-weight:900;border-radius:999px;padding:7px 9px}.open{background:rgba(112,214,151,.12);color:#9be3b7;border:1px solid rgba(112,214,151,.22)}.locked{background:rgba(255,255,255,.04);color:#837c87;border:1px solid rgba(255,255,255,.06)}.hidden{display:none!important}.logout{font-size:12px;color:#aaa1ae;text-align:center;margin-top:18px;cursor:pointer;text-decoration:underline}.email{font-size:12px;color:#b8afbc;text-align:center;margin-bottom:10px}
+</style>
+</head>
+<body><div class="wrap">
+<div class="brand"><img src="assets/mrgreys-x.jpg" alt="Mr Grey's Room"><div class="brandline">MR GREY'S ROOM</div></div>
+<h1>Moje hry</h1>
+<p class="sub">Vaše zakúpené balíčky zostávajú dostupné navždy. Prihlásenie funguje bez hesla cez bezpečný odkaz v e-maile.</p>
+
+<section id="login" class="panel">
+<form id="magicForm">
+<label for="email">E-mail použitý pri nákupe</label>
+<input id="email" type="email" placeholder="meno@email.sk" autocomplete="email" required>
+<button id="sendBtn" type="submit">POSLAŤ MAGIC LINK</button>
+<div id="loginMsg" class="msg">Po kliknutí na odkaz v e-maile sa vrátite sem a zobrazia sa vaše hry.</div>
+</form>
+</section>
+
+<section id="library" class="panel hidden">
+<div class="email" id="userEmail"></div>
+<div class="games" id="games"></div>
+<a class="btn secondary" href="/">SPÄŤ NA DATE NIGHT</a>
+<div class="logout" id="logout">Odhlásiť sa</div>
+</section>
+</div>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/+esm";
+const supabase=createClient("https://siferzggaubvtjlqdckj.supabase.co","sb_publishable_5V6HZj-kn5B9CVFWrGDR8g_xEWKdJwu",{auth:{detectSessionInUrl:true,persistSession:true,autoRefreshToken:true}});
+const $=id=>document.getElementById(id);
+const products=[
+  ["romantic","🖤 ROMANTIC"],["secrets","🔐 SECRETS"],["dare","😈 DARE"],["afterdark","🌙 AFTER DARK"],["complete","✕ X COMPLETE"]
+];
+
+async function render(){
+  const {data:{user}}=await supabase.auth.getUser();
+  if(!user){$("login").classList.remove("hidden");$("library").classList.add("hidden");return;}
+  $("login").classList.add("hidden");$("library").classList.remove("hidden");$("userEmail").textContent=user.email||"";
+  const {data,error}=await supabase.from("entitlements").select("product_code,purchased_at");
+  if(error){$("games").innerHTML='<div class="msg">Nepodarilo sa načítať zakúpené hry. Skúste stránku obnoviť.</div>';return;}
+  const owned=new Set((data||[]).map(x=>x.product_code));
+  if(owned.has("complete")){["romantic","secrets","dare","afterdark","complete"].forEach(x=>owned.add(x));}
+  $("games").innerHTML=products.map(([code,name])=>owned.has(code)
+? `<a href="/play.html?pack=${code}" class="game" style="text-decoration:none;color:inherit"><strong>${name}</strong><span class="status open">HRAŤ →</span></a>`
+: `<div class="game"><strong>${name}</strong><span class="status locked">ZAMKNUTÉ</span></div>`).join("");
+}
+
+let resendTimer=null;
+function startCooldown(seconds=60){
+  const btn=$("sendBtn"), note=$("loginMsg");
+  let left=seconds;
+  btn.disabled=true;
+  btn.textContent="E-MAIL ODOSLANÝ ✓";
+  note.className="msg ok";
+  note.innerHTML=`<strong>Hotovo.</strong> Prihlasovací odkaz sme poslali na váš e-mail.<br>Ďalší odkaz môžete poslať o ${left} s.`;
+  clearInterval(resendTimer);
+  resendTimer=setInterval(()=>{
+    left--;
+    if(left<=0){
+      clearInterval(resendTimer);
+      btn.disabled=false;
+      btn.textContent="POSLAŤ MAGIC LINK";
+      note.innerHTML="Ak e-mail neprišiel, môžete ho poslať znova. Skontrolujte aj Spam alebo Reklamy.";
+    }else{
+      note.innerHTML=`<strong>Hotovo.</strong> Prihlasovací odkaz sme poslali na váš e-mail.<br>Ďalší odkaz môžete poslať o ${left} s.`;
+    }
+  },1000);
+}
+
+$("magicForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const email=$("email").value.trim().toLowerCase();
+  const btn=$("sendBtn"), msg=$("loginMsg");
+  msg.className="msg"; msg.textContent="";
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    msg.className="msg err";
+    msg.textContent="Zadajte prosím platnú e-mailovú adresu.";
+    return;
+  }
+  btn.disabled=true; btn.textContent="ODOSIELAM…";
+  const {error}=await supabase.auth.signInWithOtp({
+    email,
+    options:{emailRedirectTo:location.origin+"/account.html"}
+  });
+  if(error){
+    btn.disabled=false; btn.textContent="POSLAŤ MAGIC LINK";
+    msg.className="msg err";
+    msg.textContent="Magic Link sa nepodarilo odoslať. Skúste to prosím znova o chvíľu.";
+    return;
+  }
+  startCooldown(60);
+});
+
+$("logout").addEventListener("click",async()=>{await supabase.auth.signOut();render();});
+supabase.auth.onAuthStateChange(()=>render());
+await render();
+</script></body></html>
