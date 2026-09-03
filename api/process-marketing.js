@@ -3,8 +3,8 @@ const SB="https://siferzggaubvtjlqdckj.supabase.co";
 function h(secret,prefer){const out={apikey:secret,"Content-Type":"application/json",...(prefer?{Prefer:prefer}:{})};if(String(secret).startsWith("eyJ"))out.Authorization=`Bearer ${secret}`;return out;}
 export default async function handler(req,res){
  if(req.method!=="GET"&&req.method!=="POST") return res.status(405).json({error:"Method not allowed"});
- const expected=process.env.MARKETING_CRON_SECRET;
- const supplied=String(req.headers.authorization||"").replace(/^Bearer\s+/i,"") || String(req.query?.key||"");
+ const expected=String(process.env.MARKETING_CRON_SECRET||"").trim();
+ const supplied=(String(req.headers.authorization||"").replace(/^Bearer\s+/i,"") || String(req.query?.key||"")).trim();
  const fromVercelCron=String(req.headers["x-vercel-cron"]||"")==="1";
  if(!fromVercelCron && (!expected||supplied!==expected)) return res.status(401).json({error:"Unauthorized"});
  const secret=process.env.SUPABASE_SECRET_KEY;if(!secret) return res.status(503).json({error:"Not configured"});
