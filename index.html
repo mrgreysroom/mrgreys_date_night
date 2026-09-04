@@ -324,6 +324,14 @@ function requirePurchaseEmail(){
         value="${String(leadEmail||"").replace(/"/g,"&quot;")}"
         style="width:100%;box-sizing:border-box;padding:15px 16px;border-radius:12px;border:1px solid #40314b;background:#0b0b0e;color:#fff;font-size:16px;outline:none;">
       <div id="purchaseEmailError" style="min-height:20px;margin-top:7px;color:#ff8c9d;font-size:12px;text-align:center"></div>
+      <label for="purchaseMarketingConsent" style="display:flex;gap:10px;align-items:flex-start;margin:2px 0 14px;color:#ddd;font-size:12px;line-height:1.45;cursor:pointer;text-align:left">
+        <input id="purchaseMarketingConsent" type="checkbox"
+          style="margin-top:2px;width:17px;height:17px;accent-color:#b52be6;flex:0 0 auto">
+        <span>
+          <strong style="color:#fff">Chcem dostávať SPECIAL X edície, nové hry a exkluzívne ponuky MR GREY’S DATE NIGHT.</strong>
+          <span style="display:block;color:#777;margin-top:3px">Z odberu sa môžem kedykoľvek jedným kliknutím odhlásiť.</span>
+        </span>
+      </label>
       <button id="purchaseEmailContinue" type="button"
         style="width:100%;margin-top:5px;padding:15px;border:0;border-radius:12px;background:linear-gradient(90deg,#8d24db,#d12fd2);color:#fff;font-weight:800;font-size:14px;cursor:pointer">
         POKRAČOVAŤ K BEZPEČNEJ PLATBE
@@ -342,7 +350,9 @@ function requirePurchaseEmail(){
     const submit=()=>{
       const email=input.value.trim().toLowerCase();
       if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){err.textContent="Zadajte platnú e-mailovú adresu.";input.focus();return;}
-      leadEmail=email;finish(email);
+      leadEmail=email;
+      const marketingConsent=box.querySelector("#purchaseMarketingConsent").checked===true;
+      finish({email,marketingConsent});
     };
     box.querySelector("#purchaseEmailContinue").onclick=submit;
     box.querySelector("#purchaseEmailCancel").onclick=()=>finish("");
@@ -352,10 +362,25 @@ function requirePurchaseEmail(){
 }
 
 async function beginCheckout(product,btn){
-  const email=await requirePurchaseEmail();
-  if(!email)return;
+  const purchase=await requirePurchaseEmail();
+  if(!purchase||!purchase.email)return;
+  const {email,marketingConsent}=purchase;
   const original=btn.textContent;btn.disabled=true;btn.textContent="OTVÁRAM PLATBU…";
   try{
+    if(marketingConsent){
+      try{
+        await fetch("/api/lead",{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({
+            email,
+            packs:product==="complete"?[]:[product],
+            source:"purchase_modal",
+            marketingConsent:true
+          })
+        });
+      }catch(_){}
+    }
     const r=await fetch("/api/create-checkout",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({product,email})});
     const data=await r.json();
     if(!r.ok||!data.url)throw new Error(data.error||"checkout");
