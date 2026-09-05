@@ -5,23 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <meta name="theme-color" content="#070609">
 <title>Mr Grey's Date Night</title>
-<!-- Meta Pixel Code -->
-<script>
-!function(f,b,e,v,n,t,s)
-{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-n.queue=[];t=b.createElement(e);t.async=!0;
-t.src=v;s=b.getElementsByTagName(e)[0];
-s.parentNode.insertBefore(t,s)}(window, document,'script',
-'https://connect.facebook.net/en_US/fbevents.js');
-fbq('init', '1387350766843286');
-fbq('track', 'PageView');
-</script>
-<noscript><img height="1" width="1" style="display:none"
-src="https://www.facebook.com/tr?id=1387350766843286&ev=PageView&noscript=1"
-/></noscript>
-<!-- End Meta Pixel Code -->
 <style>
 :root{--bg:#050507;--bg2:#0a080d;--panel:#0d0c10;--text:#f8f5fa;--muted:#a69daa;--purple:#a839f0;--purple2:#d051ff;--line:rgba(255,255,255,.09);--silver:#ded9e2}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:
@@ -290,7 +273,14 @@ boxes.forEach(b=>b.addEventListener("change",()=>{
 }));
 
 function demoFour(pack){
-  const s=CARDS[pack]; return [s[0],s[2],s[5],s[8]].map(c=>({...c,pack}));
+  const s=CARDS[pack];
+  const demoIndexes={
+    romantic:[62,60,5,63],
+    secrets:[92,93,5,97],
+    dare:[85,81,5,67],
+    afterdark:[92,95,73,85]
+  };
+  return demoIndexes[pack].map(i=>({...s[i],pack}));
 }
 $("startDemo").addEventListener("click",()=>{
   if(chosen.length!==2)return;
