@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#070609">
+<title>MR GREY'S DATE NIGHT</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;min-height:100vh;display:grid;place-items:center;
+ background:radial-gradient(circle at 50% 20%,rgba(173,51,238,.22),transparent 30%),#070609;
+ color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif
+}
+.box{
+ width:min(92vw,520px);padding:34px 26px;
+ border:1px solid rgba(201,83,255,.25);border-radius:28px;
+ background:linear-gradient(145deg,#151019,#0a090c);
+ text-align:center;box-shadow:0 28px 90px rgba(0,0,0,.42)
+}
+.eyebrow{font-size:11px;letter-spacing:.2em;color:#d5a7ef;font-weight:800}
+.spinner{
+ width:42px;height:42px;margin:22px auto;
+ border:3px solid rgba(255,255,255,.1);border-top-color:#c64df4;
+ border-radius:50%;animation:spin .8s linear infinite
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+h1{font-size:28px;margin:8px 0 9px}
+.sub{font-size:14px;line-height:1.5;color:#aaa1ae;margin:0}
+.error{display:none;color:#ffbfd0;margin-top:18px;font-size:13px;line-height:1.45}
+.back{display:none;margin-top:18px;color:#d889ff;text-decoration:none;font-weight:800;font-size:13px}
+</style>
+</head>
+<body>
+<div class="box">
+ <div class="eyebrow">MR GREY'S DATE NIGHT</div>
+ <div class="spinner" id="spinner"></div>
+ <h1 id="title">Otváram vašu hru…</h1>
+ <p class="sub" id="sub">Bez ďalšieho prihlasovania. O chvíľu ste v hre.</p>
+ <div class="error" id="error"></div>
+ <a class="back" id="back" href="https://mrgrey.sk/club">Späť do MR GREY'S CLUB</a>
+</div>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/+esm";
+
+const supabase=createClient(
+ "https://siferzggaubvtjlqdckj.supabase.co",
+ "sb_publishable_5V6HZj-kn5B9CVFWrGDR8g_xEWKdJwu",
+ {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}
+);
+
+const q=new URLSearchParams(location.search);
+const tokenHash=q.get('token_hash')||'';
+const pack=q.get('pack')||'romantic';
+const lang=(q.get('lang')||'sk').toLowerCase();
+
+const validPacks=new Set(['romantic','secrets','dare','afterdark','complete']);
+const packSafe=validPacks.has(pack)?pack:'romantic';
+
+const i18n={
+ sk:{
+  title:'Otváram vašu hru…',
+  sub:'Bez ďalšieho prihlasovania. O chvíľu ste v hre.',
+  err:'Nepodarilo sa otvoriť hru. Vráťte sa do Clubu a skúste to znova.',
+  back:"Späť do MR GREY'S CLUB"
+ },
+ cs:{
+  title:'Otevírám vaši hru…',
+  sub:'Bez dalšího přihlašování. Za chvíli jste ve hře.',
+  err:'Hru se nepodařilo otevřít. Vraťte se do Clubu a zkuste to znovu.',
+  back:"Zpět do MR GREY'S CLUB"
+ },
+ pl:{
+  title:'Otwieram Waszą grę…',
+  sub:'Bez dodatkowego logowania. Za chwilę będziecie w grze.',
+  err:'Nie udało się otworzyć gry. Wróć do Clubu i spróbuj ponownie.',
+  back:"Wróć do MR GREY'S CLUB"
+ },
+ en:{
+  title:'Opening your game…',
+  sub:'No extra sign-in. You’ll be in the game in a moment.',
+  err:'We couldn’t open the game. Return to Club and try again.',
+  back:"Back to MR GREY'S CLUB"
+ }
+};
+
+const t=i18n[lang]||i18n.sk;
+document.documentElement.lang=lang;
+document.getElementById('title').textContent=t.title;
+document.getElementById('sub').textContent=t.sub;
+document.getElementById('back').textContent=t.back;
+
+function fail(){
+ document.getElementById('spinner').style.display='none';
+ document.getElementById('error').textContent=t.err;
+ document.getElementById('error').style.display='block';
+ document.getElementById('back').style.display='inline-block';
+}
+
+try{
+ if(!tokenHash)throw new Error('missing token');
+
+ const {data,error}=await supabase.auth.verifyOtp({
+  token_hash:tokenHash,
+  type:'magiclink'
+ });
+
+ if(error||!data?.session)throw error||new Error('no session');
+
+ // Remove the one-time token from browser history before entering the game.
+ history.replaceState({},'',`/bridge.html?pack=${encodeURIComponent(packSafe)}&lang=${encodeURIComponent(lang)}`);
+
+ // play.html already checks the persisted Supabase session + entitlements.
+ location.replace(`/play.html?pack=${encodeURIComponent(packSafe)}`);
+}catch(e){
+ console.error('MR GREYS bridge error',e);
+ fail();
+}
+</script>
+</body>
+</html>
