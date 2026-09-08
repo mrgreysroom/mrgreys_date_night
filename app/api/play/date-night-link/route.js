@@ -1,8 +1,0 @@
-import {NextResponse} from 'next/server'
-import {cookies} from 'next/headers'
-import {readClubToken,clubCookieName} from '../../../../lib/clubAuth'
-import {isClubActiveToken} from '../../../../lib/memberAccess'
-import {supabaseSelect} from '../../../../lib/supabaseAdmin'
-export async function GET(req){
- try{const m=readClubToken(cookies().get(clubCookieName)?.value);if(!m?.email||!isClubActiveToken(m))return NextResponse.redirect(new URL('/club/join',req.url));const email=String(m.email).toLowerCase();const ent=await supabaseSelect('entitlements',`email=eq.${encodeURIComponent(email)}&product_code=eq.complete&select=id&limit=1`);if(!ent?.length)return NextResponse.json({error:'Date Night entitlement is not ready.'},{status:403});const base=process.env.NEXT_PUBLIC_SUPABASE_URL||'https://siferzggaubvtjlqdckj.supabase.co';const key=process.env.SUPABASE_SECRET_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY;if(!key)throw new Error('Supabase server env missing');const redirectTo='https://datenight.mrgreysroom.sk/play.html?pack=complete';const r=await fetch(`${base}/auth/v1/admin/generate_link`,{method:'POST',headers:{apikey:key,Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({type:'magiclink',email,options:{redirectTo}})});const d=await r.json();if(!r.ok)throw new Error(d?.msg||d?.message||'Game login bridge failed');const link=d?.properties?.action_link||d?.action_link;if(!link)throw new Error('Magic link was not generated');return NextResponse.redirect(link)}catch(e){return NextResponse.json({error:e.message||'Game bridge failed'},{status:500})}
-}

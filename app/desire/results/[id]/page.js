@@ -1,5 +1,0 @@
-import {cookies} from 'next/headers'
-import {redirect} from 'next/navigation'
-import {readClubToken,clubCookieName} from '../../../../lib/clubAuth'
-import {supabaseSelect} from '../../../../lib/supabaseAdmin'
-export default async function Page({params}){const m=readClubToken(cookies().get(clubCookieName)?.value);if(!m?.email)redirect('/login');const e=String(m.email).toLowerCase();const rows=await supabaseSelect('desire_result_history',`session_id=eq.${encodeURIComponent(params.id)}&member_email=eq.${encodeURIComponent(e)}&select=*&limit=1`);const r=rows?.[0]?.result_snapshot;if(!r)return <main className="deepShell"><div className="deepStart"><h1>Výsledok sa nenašiel.</h1></div></main>;return <main className="deepShell"><div className="deepResult"><div className="deepIcon">{r.icon}</div><small>VAŠE DESIRE</small><h1>{r.headline}</h1><p>{r.summary}</p>{(r.discoveries||[]).map((x,i)=><div className="resultDiscovery" key={i}><b>{x.title}</b><span>{x.text}</span></div>)}<div className="resultAction"><small>SKÚSTE SPOLU</small><p>{r.action}</p></div><a className="deepGold" href="/club/account">← MOJE DESIRE</a></div></main>}

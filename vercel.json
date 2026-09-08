@@ -1,9 +1,4 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "crons": [
-    {
-      "path": "/api/cron/journey",
-      "schedule": "0 7 * * *"
-    }
-  ]
+  "cleanUrls": true,
+  "trailingSlash": false
 }

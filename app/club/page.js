@@ -3,12 +3,19 @@ import {redirect} from 'next/navigation'
 import {readClubToken,clubCookieName} from '../../lib/clubAuth'
 import {isClubActiveToken} from '../../lib/memberAccess'
 import ClubHeader from './ClubHeader'
+import {getLang} from '../../lib/i18n'
+import {update13} from '../../lib/update13i18n'
 
-const games=[
- {title:'Romantic Date Night',status:'ODOMKNUTÉ V CLUBE',href:'/play/date-night',img:'/card-play-clean.jpg',cta:'HRAŤ TERAZ →'},
- {title:'After Dark',status:'ČLENSKÁ CENA · PRIPRAVUJEME',href:'#',img:'/story-bar.jpg',cta:'ČOSKORO'},
- {title:'Secret Missions',status:'PRIPRAVUJEME',href:'#',img:'/story-elevator.jpg',cta:'ČOSKORO'}
-]
+const makeGames=(t,fullAccess=false)=>{
+ const internal='✓ ODOMKNUTÉ · INTERNÝ PRÍSTUP'
+ return [
+  {title:'ROMANTIC',subtitle:t.romantic,status:fullAccess?internal:t.included,href:'/play/date-night',img:'/card-play-clean.jpg',cta:t.play,locked:false},
+  {title:'SECRETS',subtitle:t.secrets,status:fullAccess?internal:'6,99 € · '+(t.price.includes('ONE-TIME')?'ONE-TIME':t.price.split('· ')[1]),href:fullAccess?'/play/date-night':'#',img:'/story-elevator.jpg',cta:fullAccess?t.play:t.buy,locked:!fullAccess},
+  {title:'DARE',subtitle:t.dare,status:fullAccess?internal:'6,99 € · '+(t.price.includes('ONE-TIME')?'ONE-TIME':t.price.split('· ')[1]),href:fullAccess?'/play/date-night':'#',img:'/story-theatre.jpg',cta:fullAccess?t.play:t.buy,locked:!fullAccess},
+  {title:'AFTER DARK',subtitle:t.after,status:fullAccess?internal:'7,99 € · '+(t.price.includes('ONE-TIME')?'ONE-TIME':t.price.split('· ')[1]),href:fullAccess?'/play/date-night':'#',img:'/story-bar.jpg',cta:fullAccess?t.play:t.buy,locked:!fullAccess},
+  {title:'X COMPLETE',subtitle:t.complete,status:fullAccess?internal:'19,99 € · '+(t.price.includes('ONE-TIME')?'ONE-TIME':t.price.split('· ')[1]),href:fullAccess?'/play/date-night':'#',img:'/card-play-clean.jpg',cta:fullAccess?t.play:t.unlock,locked:!fullAccess}
+ ]
+}
 const desire=[
  {icon:'❤️',title:'MY DVAJA',slug:'my-dvaja'},{icon:'💬',title:'BEZ FILTRA',slug:'bez-filtra'},{icon:'🔮',title:'NAŠA BUDÚCNOSŤ',slug:'nasa-buducnost'},{icon:'🔥',title:'INTIMITA',slug:'intimita'},{icon:'😈',title:'TAJNÉ TÚŽBY',slug:'tajne-tuzby'}
 ]
@@ -18,17 +25,19 @@ const storyCards=[
  {title:'Stretla som ho v kine — I. časť',img:'/story-theatre.jpg',href:'/club/stories/kino'}
 ]
 export default function Club(){
+ const lang=getLang(),t=update13[lang]||update13.sk
  const member=readClubToken(cookies().get(clubCookieName)?.value)
  if(!member||!isClubActiveToken(member)) redirect('/club/join')
+ const games=makeGames(t,Boolean(member.fullAccess))
  const first=(member.name||'').trim().split(/\s+/)[0]
  return <div className="clubShell"><ClubHeader name={member.name||''} email={member.email||''}/>
  <section className="clubHero clubHeroBold" style={{backgroundImage:"linear-gradient(180deg,rgba(4,3,7,.08),rgba(4,3,7,.96) 88%),url('/club-hero-clean.jpg')"}}><div><div className="clubKicker">MEMBERS ONLY · ODOMKNUTÉ</div><h1>{first?`${first}, váš súkromný svet`:'Váš súkromný svet'}<br/><em>začína tu.</em></h1><p>Všetko, čo máte odomknuté, nájdete na jednom mieste.</p></div></section>
  <main className="clubMain" id="dashboard">
   <section className="clubDashboardIntro"><div><small>👑 MÔJ MR GREY'S</small><h2>Čo dnes chcete objaviť?</h2></div><div className="memberState"><b>✓ {member.fullAccess?'PLNÝ INTERNÝ PRÍSTUP':'AKTÍVNE ČLENSTVO'}</b><span>{member.fullAccess?`${String(member.role||'admin').toUpperCase()} · 100 % ODOMKNUTÉ`:'Founding Member · 9,90 €/mesiac'}</span></div></section>
 
-  <section className="clubShelf"><div className="clubSectionHead"><div><small>🎮 MOJE HRY</small><h2>Hrajte to, čo máte odomknuté.</h2></div></div><div className="gameShelf">{games.map(g=><a key={g.title} className={`gameTile ${g.href==='#'?'isLocked':''}`} href={g.href}><div style={{backgroundImage:`linear-gradient(180deg,transparent,rgba(4,3,7,.96)),url(${g.img})`}}/><span>{g.status}</span><h3>{g.title}</h3><i>{g.cta}</i></a>)}</div></section>
+  <section className="clubShelf"><div className="clubSectionHead"><div><small>{t.games}</small><h2>{t.gamesTitle}</h2></div></div><div className="gameList">{games.map(g=><a key={g.title} className={`gameRow ${g.locked?'isLocked':'isUnlocked'}`} href={g.href}><div className="gameRowImage" style={{backgroundImage:`linear-gradient(90deg,rgba(4,3,7,.18),rgba(4,3,7,.92)),url(${g.img})`}}/><div className="gameRowCopy"><span>{g.status}</span><h3>{g.title}</h3><p>{g.subtitle}</p></div><i>{g.cta}</i></a>)}</div><p className="partnerRule">{t.gameRule}</p></section>
 
-  <section className="clubShelf"><div className="clubSectionHead"><div><small>❤️ MOJE DESIRE</small><h2>Všetkých 5 hlbších testov patrí do Clubu.</h2></div><a href="/desire">SPUSTIŤ DESIRE →</a></div><div className="desireEntitlements">{desire.map(d=><a href={`/desire/deep/${d.slug}`} key={d.slug}><b>{d.icon} {d.title}</b><span>✓ ZAHRNUTÉ V CLUBE</span></a>)}</div><p className="partnerRule">Stačí členstvo jedného z vás. Partnera do spoločných Club DESIRE testov pozývate zdarma.</p><div className="desireClubChoices"><a href="/desire">⚡ VYBRAŤ TEST A OBJAVOVAŤ HNEĎ →</a><a href="/club/desire/journey">✨ SPUSTIŤ DESIRE JOURNEY →</a></div></section>
+  <section className="clubShelf"><div className="clubSectionHead"><div><small>❤️ MOJE DESIRE</small><h2>Všetkých 5 hlbších testov patrí do Clubu.</h2></div><a href="/desire">SPUSTIŤ DESIRE →</a></div><div className="desireEntitlements">{desire.map(d=><a href={`/desire/deep/${d.slug}`} key={d.slug}><b>{d.icon} {d.title}</b><span>✓ PLNÝ TEST · 24 OTÁZOK · ZAHRNUTÉ V CLUBE</span></a>)}</div><p className="partnerRule">Stačí členstvo jedného z vás. Partnera do spoločných Club DESIRE testov pozývate zdarma.</p><div className="desireClubChoices"><a href="/desire">⚡ VYBRAŤ TEST A OBJAVOVAŤ HNEĎ →</a><a href="/club/desire/journey">✨ SPUSTIŤ DESIRE JOURNEY →</a></div></section>
 
   <section className="clubNew"><div className="clubSectionHead"><div><small>✨ NOVÉ PRE VÁS</small><h2>Práve teraz v MR GREY'S.</h2></div></div><div className="clubNewGrid compactNew"><a className="clubMini" href="/play/date-night" style={{backgroundImage:"linear-gradient(180deg,rgba(4,3,7,.12),rgba(4,3,7,.95)),url('/card-play-clean.jpg')"}}><span>🎮 ODOMKNUTÁ HRA</span><h3>Date Night</h3><i>HRAŤ →</i></a><a className="clubMini" href="/desire" style={{backgroundImage:"linear-gradient(180deg,rgba(4,3,7,.12),rgba(4,3,7,.95)),url('/card-desire-clean.jpg')"}}><span>❤️ DESIRE</span><h3>Bezplatný test</h3><i>SPUSTIŤ →</i></a><a className="clubMini" href="/club/stories/spolocnicka" style={{backgroundImage:"linear-gradient(180deg,rgba(4,3,7,.12),rgba(4,3,7,.95)),url('/story-sklamanie.jpg')"}}><span>😈 NOVÁ STORY</span><h3>Denník spoločníčky</h3><i>ČÍTAŤ →</i></a><a className="clubMini" href="/club/stories/tatry" style={{backgroundImage:"linear-gradient(180deg,rgba(4,3,7,.12),rgba(4,3,7,.95)),url('/story-tatry-couple.jpg')"}}><span>🏔️ I. ČASŤ</span><h3>Víkend v Tatrách</h3><i>ČÍTAŤ →</i></a></div></section>
 
