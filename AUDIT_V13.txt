@@ -1,0 +1,25 @@
+MR GREY'S DATE NIGHT — V13 FINAL AUDIT
+2026-09-08
+
+PASS: JavaScript syntax — i18n core, card bundle, all included API JS
+PASS: SK cards — Romantic 70 / Secrets 100 / Dare 100 / After Dark 100 = 370
+PASS: CZ cards — 370
+PASS: PL cards — 370
+PASS: EN cards — 370
+PASS: 1,480 total language-specific card texts
+PASS: stable card IDs match across all languages
+PASS: type / SPECIAL X / special_kind metadata match across all languages
+PASS: landing uses localized dataset
+PASS: paid play uses localized dataset
+PASS: locale persisted + ?lang routing + browser fallback
+PASS: Phase1 language field retained for lead + checkout
+PASS: Stripe success/cancel language preserved
+PASS: account/play links preserve locale
+PASS: static UI translation layer + dynamic MutationObserver translations
+
+NOT AN AUTOMATED PRODUCTION PASS:
+- Real Stripe payment
+- Real Supabase entitlement write
+- Magic Link SMTP delivery
+- Live iPhone/Vercel smoke test
+These require the production environment after deployment.

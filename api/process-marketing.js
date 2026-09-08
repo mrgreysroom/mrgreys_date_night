@@ -13,11 +13,11 @@ export default async function handler(req,res){
  if(!r.ok) return res.status(500).json({error:"Queue read failed"});
  const jobs=await r.json();let sent=0,failed=0;
  for(const job of jobs){
-  const lr=await fetch(`${SB}/rest/v1/marketing_leads?id=eq.${job.lead_id}&select=marketing_consent,unsubscribed_at,selected_packs&limit=1`,{headers:h(secret)});
+  const lr=await fetch(`${SB}/rest/v1/marketing_leads?id=eq.${job.lead_id}&select=marketing_consent,unsubscribed_at,selected_packs,language&limit=1`,{headers:h(secret)});
   const lead=(await lr.json().catch(()=>[]))[0];
   if(!lead?.marketing_consent||lead?.unsubscribed_at){await fetch(`${SB}/rest/v1/marketing_email_queue?id=eq.${job.id}`,{method:"PATCH",headers:h(secret),body:JSON.stringify({status:"cancelled",updated_at:new Date().toISOString()})});continue;}
   await fetch(`${SB}/rest/v1/marketing_email_queue?id=eq.${job.id}&status=eq.pending`,{method:"PATCH",headers:h(secret),body:JSON.stringify({status:"processing",attempts:(job.attempts||0)+1,updated_at:new Date().toISOString()})});
-  try{await sendMarketingMail({email:job.email,key:job.template_key,packs:lead.selected_packs||[]});await fetch(`${SB}/rest/v1/marketing_email_queue?id=eq.${job.id}`,{method:"PATCH",headers:h(secret),body:JSON.stringify({status:"sent",sent_at:new Date().toISOString(),last_error:null,updated_at:new Date().toISOString()})});sent++;}
+  try{await sendMarketingMail({email:job.email,key:job.template_key,packs:lead.selected_packs||[],language:lead.language||"sk"});await fetch(`${SB}/rest/v1/marketing_email_queue?id=eq.${job.id}`,{method:"PATCH",headers:h(secret),body:JSON.stringify({status:"sent",sent_at:new Date().toISOString(),last_error:null,updated_at:new Date().toISOString()})});sent++;}
   catch(e){const attempts=(job.attempts||0)+1;await fetch(`${SB}/rest/v1/marketing_email_queue?id=eq.${job.id}`,{method:"PATCH",headers:h(secret),body:JSON.stringify({status:attempts>=3?"failed":"pending",last_error:String(e?.message||e).slice(0,500),updated_at:new Date().toISOString()})});failed++;}
  }
  return res.status(200).json({ok:true,processed:jobs.length,sent,failed});

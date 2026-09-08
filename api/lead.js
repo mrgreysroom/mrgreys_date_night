@@ -1,12 +1,17 @@
 import { sendMarketingMail } from "./_marketing-mail.js";
 
 const VALID_PACKS = new Set(["romantic","secrets","dare","afterdark"]);
+const VALID_LANGS = new Set(["sk","cz","pl","en"]);
 const SB = "https://siferzggaubvtjlqdckj.supabase.co";
 
 function sbHeaders(secret, prefer="return=representation") {
   const h = { apikey: secret, "Content-Type":"application/json", Prefer: prefer };
   if (String(secret).startsWith("eyJ")) h.Authorization = `Bearer ${secret}`;
   return h;
+}
+function cleanLang(value){
+  const v=String(value||"sk").toLowerCase();
+  return VALID_LANGS.has(v)?v:"sk";
 }
 
 async function sendImmediateIfDue(secret, lead){
@@ -16,7 +21,7 @@ async function sendImmediateIfDue(secret, lead){
   const job=(await qr.json().catch(()=>[]))[0];
   if(!job) return {sent:false};
   try{
-    await sendMarketingMail({email:lead.email,key:"demo_1_immediate",packs:lead.selected_packs||[]});
+    await sendMarketingMail({email:lead.email,key:"demo_1_immediate",packs:lead.selected_packs||[],language:cleanLang(lead.language)});
     const now=new Date().toISOString();
     await fetch(`${SB}/rest/v1/marketing_email_queue?id=eq.${encodeURIComponent(job.id)}`,{
       method:"PATCH",headers:sbHeaders(secret,"return=minimal"),body:JSON.stringify({status:"sent",sent_at:now,attempts:1,last_error:null,updated_at:now})
@@ -37,12 +42,13 @@ export default async function handler(req,res){
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({error:"Invalid email"});
   const packs=Array.isArray(req.body?.packs)?req.body.packs.map(String).filter(p=>VALID_PACKS.has(p)).slice(0,2):[];
   const marketingConsent=req.body?.marketingConsent===true;
+  const language=cleanLang(req.body?.language);
   const secret=process.env.SUPABASE_SECRET_KEY;
   if(!secret) return res.status(503).json({error:"Server is not configured",demoFallback:true});
 
   try {
     const now=new Date().toISOString();
-    const body={email,marketing_consent:marketingConsent,source:String(req.body?.source||"landing_v12").slice(0,80),updated_at:now};
+    const body={email,language,marketing_consent:marketingConsent,source:String(req.body?.source||"landing_v12").slice(0,80),updated_at:now};
     if(packs.length) body.selected_packs=packs;
     if(marketingConsent){body.consented_at=now;body.unsubscribed_at=null;}
     const r=await fetch(`${SB}/rest/v1/marketing_leads?on_conflict=email`,{
@@ -51,7 +57,7 @@ export default async function handler(req,res){
     if(!r.ok) throw new Error(`lead ${r.status} ${await r.text()}`);
     const lead=(await r.json().catch(()=>[]))[0];
     const immediate=marketingConsent?await sendImmediateIfDue(secret,lead):{sent:false};
-    return res.status(200).json({ok:true,leadStored:true,immediateSent:Boolean(immediate.sent)});
+    return res.status(200).json({ok:true,leadStored:true,language,immediateSent:Boolean(immediate.sent)});
   } catch(err) {
     console.error("Marketing lead sync failed",err?.message||err);
     return res.status(200).json({ok:true,demoFallback:true});

@@ -1,0 +1,28 @@
+MR GREY'S DATE NIGHT — V13 MULTILINGUAL COMPLETE
+
+[✓] 370 source cards preserved
+[✓] SK/CZ/PL/EN = 370 cards each
+[✓] Stable card IDs and metadata preserved
+[✓] SPECIAL X positions preserved
+[✓] Landing reads localized card deck
+[✓] Paid play reads localized card deck
+[✓] Card type labels localized
+[✓] Devil lines localized
+[✓] Deck descriptions localized
+[✓] Landing/account/success UI language framework added
+[✓] Language persisted in localStorage
+[✓] ?lang=SK/CZ/PL/EN flow supported
+[✓] Browser cs → CZ mapping supported
+[✓] Phase1 lead/checkout language persistence retained
+[✓] Stripe success/cancel keeps language
+
+PRODUCTION SMOKE TEST
+[ ] Merge ZIP into existing repo without deleting /assets or unchanged API files
+[ ] Deploy to Vercel
+[ ] Open ?lang=sk, ?lang=cz, ?lang=pl, ?lang=en
+[ ] Test free demo in all languages
+[ ] Test My Games / Magic Link
+[ ] Test one real Stripe purchase
+[ ] Test paid deck + X COMPLETE / MIX MODE
+[ ] Test iPhone
+[ ] Confirm Magic Link email delivery

@@ -5,12 +5,15 @@ const PRICE_ENV = {
   afterdark: "STRIPE_PRICE_AFTERDARK",
   complete: "STRIPE_PRICE_COMPLETE"
 };
+const VALID_LANGS=new Set(["sk","cz","pl","en"]);
 export default async function handler(req,res){
   if(req.method!=="POST") return res.status(405).json({error:"Method not allowed"});
   const product=String(req.body?.product||"");
   if(!Object.prototype.hasOwnProperty.call(PRICE_ENV,product)) return res.status(400).json({error:"Invalid product"});
   const email=String(req.body?.email||"").trim().toLowerCase();
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({error:"Email is required"});
+  const rawLang=String(req.body?.language||"sk").toLowerCase();
+  const language=VALID_LANGS.has(rawLang)?rawLang:"sk";
   const price=process.env[PRICE_ENV[product]];
   const secret=process.env.STRIPE_SECRET_KEY;
   if(!secret||!price) return res.status(503).json({error:"Stripe is not configured"});
@@ -19,9 +22,10 @@ export default async function handler(req,res){
   p.append("mode","payment");
   p.append("line_items[0][price]",price);
   p.append("line_items[0][quantity]","1");
-  p.append("success_url",`${origin}/success.html?session_id={CHECKOUT_SESSION_ID}`);
-  p.append("cancel_url",`${origin}/?payment=cancelled#try`);
+  p.append("success_url",`${origin}/success.html?session_id={CHECKOUT_SESSION_ID}&lang=${language}`);
+  p.append("cancel_url",`${origin}/?payment=cancelled&lang=${language}#try`);
   p.append("metadata[product_code]",product);
+  p.append("metadata[language]",language);
   p.append("allow_promotion_codes","true");
   p.append("customer_email",email);
   try{
