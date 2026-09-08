@@ -1,0 +1,8 @@
+"use client"
+import {useState} from 'react'
+import LanguageSwitcher from '../../components/LanguageSwitcher'
+export default function Login(){
+ const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('')
+ async function submit(e){e.preventDefault();setBusy(true);setError('');try{const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Prihlásenie zlyhalo.');window.location.href=d.redirect||'/club'}catch(e){setError(e.message)}finally{setBusy(false)}}
+ return <div className="joinShell"><div className="joinBackdrop"/><a className="joinBack" href="/">← MR GREY'S WORLD</a><div className="joinLang"><LanguageSwitcher/></div><main className="joinModal loginModal"><div className="joinCrown">♛</div><small>VITAJTE SPÄŤ</small><h1>Prihlásiť sa do MR GREY'S.</h1><p className="joinLead">Váš Club, DESIRE, Stories a všetko, čo máte odomknuté.</p><form onSubmit={submit} className="joinForm"><label>E-MAIL<input type="email" required value={email} onChange={e=>setEmail(e.target.value)} autoComplete="email" placeholder="meno@email.sk"/></label><label>HESLO<input type="password" required value={password} onChange={e=>setPassword(e.target.value)} autoComplete="current-password" placeholder="Vaše heslo"/></label><button className="joinPay" disabled={busy}>{busy?'PRIHLASUJEM…':'PRIHLÁSIŤ SA →'}</button>{error&&<div className="joinError">{error}</div>}</form><div className="joinLogin">Ešte nemáte účet? <a href="/club/join">VSTÚPIŤ DO CLUBU →</a></div></main></div>
+}
