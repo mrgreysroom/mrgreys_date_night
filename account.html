@@ -21,7 +21,7 @@ label{font-size:13px;font-weight:850}input{width:100%;min-height:58px;margin-top
 <form id="magicForm">
 <label for="email">E-mail použitý pri nákupe</label>
 <input id="email" type="email" placeholder="meno@email.sk" autocomplete="email" required>
-<button id="sendBtn" type="submit">POSLAŤ MAGIC LINK</button>
+<button id="sendBtn" type="submit">POSLAŤ PRIHLASOVACÍ ODKAZ</button>
 <div id="loginMsg" class="msg">Po kliknutí na odkaz v e-maile sa vrátite sem a zobrazia sa vaše hry.</div>
 </form>
 </section>
@@ -29,7 +29,7 @@ label{font-size:13px;font-weight:850}input{width:100%;min-height:58px;margin-top
 <section id="library" class="panel hidden">
 <div class="email" id="userEmail"></div>
 <div class="games" id="games"></div>
-<div id="offlineBox" class="offlineBox"><div class="offlineTitle">OFFLINE HRANIE</div><div id="offlineText" class="offlineText">Pripravujeme zariadenie na hranie bez internetu…</div><button id="offlineBtn" type="button">PRIPRAVIŤ HRU OFFLINE</button></div>
+<div id="offlineBox" class="offlineBox"><div class="offlineTitle">OFFLINE HRANIE</div><div id="offlineText" class="offlineText">Offline hranie je voliteľné. Ak ho chcete používať, pripravte si hru ešte počas pripojenia na internet.</div><button id="offlineBtn" type="button">PRIPRAVIŤ HRU OFFLINE</button></div>
 <a class="btn secondary" href="/">SPÄŤ NA DATE NIGHT</a>
 <div class="logout" id="logout">Odhlásiť sa</div>
 </section>
@@ -97,7 +97,6 @@ async function render(){
 ? `<a href="/play.html?pack=${code}&lang=${window.MRG_LANGUAGE||'sk'}" class="game" style="text-decoration:none;color:inherit"><strong>${name}</strong><span class="status open">HRAŤ →</span></a>`
 : `<div class="game"><strong>${name}</strong><span class="status locked">ZAMKNUTÉ</span></div>`).join("");
   refreshOfflineStatus();
-  prepareOffline(false);
 }
 
 let resendTimer=null;
@@ -114,7 +113,7 @@ function startCooldown(seconds=60){
     if(left<=0){
       clearInterval(resendTimer);
       btn.disabled=false;
-      btn.textContent="POSLAŤ MAGIC LINK";
+      btn.textContent="POSLAŤ PRIHLASOVACÍ ODKAZ";
       note.innerHTML="Ak e-mail neprišiel, môžete ho poslať znova. Skontrolujte aj Spam alebo Reklamy.";
     }else{
       note.innerHTML=`<strong>Hotovo.</strong> Prihlasovací odkaz sme poslali na váš e-mail.<br>Ďalší odkaz môžete poslať o ${left} s.`;
@@ -138,9 +137,9 @@ $("magicForm").addEventListener("submit",async e=>{
     options:{emailRedirectTo:location.origin+"/account.html"}
   });
   if(error){
-    btn.disabled=false; btn.textContent="POSLAŤ MAGIC LINK";
+    btn.disabled=false; btn.textContent="POSLAŤ PRIHLASOVACÍ ODKAZ";
     msg.className="msg err";
-    msg.textContent="Magic Link sa nepodarilo odoslať. Skúste to prosím znova o chvíľu.";
+    msg.textContent="Prihlasovací odkaz sa nepodarilo odoslať. Skúste to prosím znova o chvíľu.";
     return;
   }
   startCooldown(60);
