@@ -82,8 +82,12 @@ const products=[
   ["romantic","🖤 ROMANTIC"],["secrets","🔐 SECRETS"],["dare","😈 DARE"],["afterdark","🌙 AFTER DARK"],["complete","✕ X COMPLETE"]
 ];
 
-async function render(){
-  const {data:{user}}=await supabase.auth.getUser();
+async function render(userFromAuth=null){
+  let user=userFromAuth;
+  if(!user){
+    const {data:{user:verifiedUser}}=await supabase.auth.getUser();
+    user=verifiedUser||null;
+  }
   currentUser=user||null;
   if(!user){$("login").classList.remove("hidden");$("library").classList.add("hidden");return;}
   $("login").classList.add("hidden");$("library").classList.remove("hidden");$("userEmail").textContent=user.email||"";
@@ -106,7 +110,7 @@ function startCooldown(seconds=60){
   btn.disabled=true;
   btn.textContent="E-MAIL ODOSLANÝ ✓";
   note.className="msg ok";
-  note.innerHTML=`<strong>Hotovo.</strong> Prihlasovací odkaz sme poslali na váš e-mail.<br>Ďalší odkaz môžete poslať o ${left} s.`;
+  note.innerHTML=`<strong>Hotovo.</strong> Prihlasovací odkaz sme poslali na váš e-mail.<br>Použite prosím najnovší prijatý e-mail. Ďalší odkaz môžete poslať o ${left} s.`;
   clearInterval(resendTimer);
   resendTimer=setInterval(()=>{
     left--;
@@ -116,7 +120,7 @@ function startCooldown(seconds=60){
       btn.textContent="POSLAŤ PRIHLASOVACÍ ODKAZ";
       note.innerHTML="Ak e-mail neprišiel, môžete ho poslať znova. Skontrolujte aj Spam alebo Reklamy.";
     }else{
-      note.innerHTML=`<strong>Hotovo.</strong> Prihlasovací odkaz sme poslali na váš e-mail.<br>Ďalší odkaz môžete poslať o ${left} s.`;
+      note.innerHTML=`<strong>Hotovo.</strong> Prihlasovací odkaz sme poslali na váš e-mail.<br>Použite prosím najnovší prijatý e-mail. Ďalší odkaz môžete poslať o ${left} s.`;
     }
   },1000);
 }
@@ -139,7 +143,10 @@ $("magicForm").addEventListener("submit",async e=>{
   if(error){
     btn.disabled=false; btn.textContent="POSLAŤ PRIHLASOVACÍ ODKAZ";
     msg.className="msg err";
-    msg.textContent="Prihlasovací odkaz sa nepodarilo odoslať. Skúste to prosím znova o chvíľu.";
+    const rateLimited = error.status === 429 || /rate|limit|too many/i.test(error.message || "");
+    msg.textContent = rateLimited
+      ? "Prihlasovací odkaz ste si vyžiadali príliš rýchlo za sebou. Počkajte prosím aspoň 60 sekúnd a skúste to znova."
+      : "Prihlasovací odkaz sa nepodarilo odoslať. Skúste to prosím znova o chvíľu.";
     return;
   }
   startCooldown(60);
@@ -147,7 +154,13 @@ $("magicForm").addEventListener("submit",async e=>{
 
 $("offlineBtn").addEventListener("click",()=>prepareOffline(true));
 $("logout").addEventListener("click",async()=>{localStorage.removeItem(OFFLINE_KEY);await supabase.auth.signOut();render();});
-supabase.auth.onAuthStateChange(()=>render());
+let authRenderTimer=null;
+supabase.auth.onAuthStateChange((event,session)=>{
+  clearTimeout(authRenderTimer);
+  authRenderTimer=setTimeout(()=>{
+    render(session?.user || null);
+  },0);
+});
 await registerOfflineWorker();
-await render();
+setTimeout(()=>render(),0);
 </script></body></html>
