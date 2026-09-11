@@ -1,5 +1,5 @@
 <!doctype html><html lang="sk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<meta name="theme-color" content="#070609"><title>MR GREY'S DATE NIGHT · Hra</title>
+<meta name="theme-color" content="#070609"><link rel="manifest" href="/manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><title>MR GREY'S DATE NIGHT · Hra</title>
 <style>
 *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 50% 8%,rgba(172,50,238,.2),transparent 28%),#070609;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}.wrap{max-width:560px;margin:auto;padding:22px 18px 55px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.top a{color:#bbb0bf;text-decoration:none;font-size:13px}.brand{font-size:11px;letter-spacing:.18em;color:#cbbbd1}h1{font-size:33px;margin:8px 0 5px}.sub{color:#9e94a2;font-size:13px;line-height:1.45}.card{margin-top:25px;min-height:420px;border-radius:30px;border:1px solid rgba(211,82,255,.28);background:radial-gradient(circle at 80% 10%,rgba(197,66,246,.18),transparent 28%),linear-gradient(145deg,#18121c,#0a090c);padding:28px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 25px 80px rgba(0,0,0,.35)}.type{font-size:11px;font-weight:900;letter-spacing:.18em;color:#cb7df6}.text{font-size:27px;line-height:1.22;font-weight:850;margin:30px 0}.progress{font-size:12px;color:#8f8793}button{width:100%;min-height:57px;border:0;border-radius:17px;margin-top:13px;background:linear-gradient(135deg,#8425c9,#c44cf3);color:#fff;font-size:15px;font-weight:900}.secondary{background:#151219;border:1px solid rgba(255,255,255,.09)}.hidden{display:none!important}.locked{margin-top:25px;border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:25px;background:#100e12;text-align:center;color:#bbb1be;line-height:1.5}.mix{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:15px}.mix button{margin:0;min-height:46px;font-size:12px}.notice{font-size:11px;color:#827a86;text-align:center;margin-top:13px;line-height:1.4}
 
@@ -10,13 +10,16 @@
 .soundToggle{border:1px solid rgba(255,255,255,.12);background:#151219;color:#eee;width:auto;min-height:38px;margin:0;padding:0 12px;border-radius:12px;font-size:13px}.gameStage{position:relative}.floatDevil{position:absolute;width:62px;height:62px;object-fit:contain;pointer-events:none;opacity:0;filter:drop-shadow(0 8px 22px rgba(190,55,240,.35));z-index:4;transition:opacity .3s ease;animation:devilBob 2.2s ease-in-out infinite}.floatDevil.show{opacity:.88}.devilBubble{position:absolute;z-index:5;max-width:250px;background:rgba(16,12,20,.96);border:1px solid rgba(211,82,255,.45);box-shadow:0 16px 50px rgba(0,0,0,.5);border-radius:18px;padding:12px 14px;font-size:14px;font-weight:800;line-height:1.35;opacity:0;transform:translateY(8px);transition:.25s ease;pointer-events:none}.devilBubble.show{opacity:1;transform:translateY(0)}@keyframes devilBob{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-12px) rotate(4deg)}}
 </style><script src="/i18n-core.js"></script><script src="/i18n-cards.js"></script></head><body><div class="wrap">
 <div class="top"><a href="/account.html">← MOJE HRY</a><div class="brand">MR GREY'S DATE NIGHT</div><button id="soundToggle" class="soundToggle" type="button" aria-label="Zvuk">🔇</button></div>
-<div id="loading"><h1>Načítavam hru…</h1><p class="sub">Overujem váš prístup.</p></div>
+<div id="loading"><h1>Načítavam hru…</h1><p id="loadingText" class="sub">Overujem váš prístup.</p></div>
 <div id="app" class="hidden"><h1 id="title"></h1><p id="subtitle" class="sub"></p><div id="mix" class="mix hidden"></div><div class="gameStage"><img id="floatDevil" class="floatDevil" src="assets/devil-x.png" alt=""><div id="devilBubble" class="devilBubble"></div><div class="card"><div><div id="type" class="type"></div><div id="text" class="text"></div></div><div id="progress" class="progress"></div></div></div><button id="next">ĎALŠIA KARTA</button><button id="shuffle" class="secondary">PREMIEŠAŤ KARTY</button><div class="notice">18+ · Pred štartom si dohodnite jasné STOP. Potom už karty hrajte naplno a bez vyjednávania.</div></div>
 <div id="locked" class="locked hidden">Tento balíček na tomto účte nie je odomknutý.<br><br><a href="/account.html" style="color:#d989ff">Späť na Moje hry</a></div>
 </div>
-<script type="module">
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/+esm";
-const supabase=createClient("https://siferzggaubvtjlqdckj.supabase.co","sb_publishable_5V6HZj-kn5B9CVFWrGDR8g_xEWKdJwu",{auth:{persistSession:true,autoRefreshToken:true}});
+<script>
+const SUPABASE_URL="https://siferzggaubvtjlqdckj.supabase.co";
+const SUPABASE_PUBLISHABLE="sb_publishable_5V6HZj-kn5B9CVFWrGDR8g_xEWKdJwu";
+const OFFLINE_KEY="mrg_offline_access_v1";
+const OFFLINE_DAYS=30;
+const ALL_PRODUCTS=["romantic","secrets","dare","afterdark","complete"];
 const DECKS=(window.MRG_CARD_DECKS[window.MRG_LANGUAGE]||window.MRG_CARD_DECKS.sk);
 const LABEL=window.MRG_I18N.labels[window.MRG_LANGUAGE]||window.MRG_I18N.labels.sk;
 const META=window.MRG_I18N.meta[window.MRG_LANGUAGE]||window.MRG_I18N.meta.sk;
@@ -32,14 +35,39 @@ function render(){const c=current[idx];$("type").textContent=(currentCode==="com
 function setPack(code){currentCode=code;cardCounter=0;nextDevilLine=5+Math.floor(Math.random()*5);if(code==="complete")current=shuffle(Object.values(DECKS).flat().map(x=>({...x})));else current=shuffle(DECKS[code].map(x=>({...x})));idx=0;$("title").textContent=META[code][0];$("subtitle").textContent=META[code][1];$("mix").classList.toggle("hidden",code!=="complete");render();}
 $("next").onclick=()=>{idx=(idx+1)%current.length;cardCounter++;render();};$("shuffle").onclick=()=>{shuffle(current);idx=0;render();};
 ["romantic","secrets","dare","afterdark"].forEach(code=>{const b=document.createElement("button");b.textContent=META[code][0];b.onclick=()=>setPack(code);$("mix").appendChild(b);});
-const requested=new URLSearchParams(location.search).get("pack")||"complete";
-const {data:{user}}=await supabase.auth.getUser();
-if(!user) location.href="/account.html";
-else {
- const {data,error}=await supabase.from("entitlements").select("product_code");
- const owned=new Set((data||[]).map(x=>x.product_code));if(owned.has("complete"))["romantic","secrets","dare","afterdark","complete"].forEach(x=>owned.add(x));
- $("loading").classList.add("hidden");
- if(!owned.has(requested)) $("locked").classList.remove("hidden");
- else {$("app").classList.remove("hidden");setPack(requested);}
+
+function readOffline(){try{const x=JSON.parse(localStorage.getItem(OFFLINE_KEY)||"null");return x&&Array.isArray(x.products)?x:null}catch(e){return null}}
+function saveOffline(products, identity={}){const list=[...new Set(products.filter(Boolean))];if(list.includes('complete'))ALL_PRODUCTS.forEach(x=>list.includes(x)||list.push(x));const now=Date.now();localStorage.setItem(OFFLINE_KEY,JSON.stringify({version:1,userId:identity.userId||'',email:identity.email||'',products:list,verifiedAt:now,expiresAt:now+OFFLINE_DAYS*86400000}));return list}
+function decodeSession(raw){try{if(raw.startsWith('base64-'))raw=decodeURIComponent(escape(atob(raw.slice(7))));return JSON.parse(raw)}catch(e){return null}}
+function getStoredSession(){for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i)||'';if(key.startsWith('sb-')&&key.endsWith('-auth-token')){const value=decodeSession(localStorage.getItem(key)||'');if(value&&value.access_token)return value}}return null}
+async function verifyOnline(){
+  const session=getStoredSession();if(!session||!session.access_token)throw new Error('NO_SESSION');
+  const res=await fetch(`${SUPABASE_URL}/rest/v1/entitlements?select=product_code`,{headers:{apikey:SUPABASE_PUBLISHABLE,Authorization:`Bearer ${session.access_token}`,Accept:'application/json'},cache:'no-store'});
+  if(res.status===401||res.status===403)throw new Error('AUTH_EXPIRED');
+  if(!res.ok)throw new Error('VERIFY_FAILED');
+  const rows=await res.json();return saveOffline((rows||[]).map(x=>x.product_code),{userId:session.user&&session.user.id,email:session.user&&session.user.email});
 }
+async function registerSW(){if('serviceWorker' in navigator){try{await navigator.serviceWorker.register('/service-worker.js',{scope:'/'});}catch(e){}}}
+function unlock(requested,owned,offlineMode){
+  const set=new Set(owned||[]);if(set.has('complete'))ALL_PRODUCTS.forEach(x=>set.add(x));
+  $("loading").classList.add("hidden");
+  if(!set.has(requested)){ $("locked").classList.remove("hidden"); return; }
+  $("app").classList.remove("hidden");
+  if(offlineMode) $("subtitle").dataset.offline='1';
+  setPack(requested);
+}
+async function boot(){
+  registerSW();
+  const requested=new URLSearchParams(location.search).get("pack")||"complete";
+  const cached=readOffline();const cachedValid=!!(cached&&cached.expiresAt>Date.now());
+  if(!navigator.onLine){
+    if(cachedValid){$("loadingText").textContent="Offline režim · používam posledné bezpečné overenie nákupu.";unlock(requested,cached.products,true);return;}
+    $("loading").classList.add("hidden");$("locked").classList.remove("hidden");$("locked").innerHTML='Offline prístup v tomto zariadení ešte nie je pripravený alebo jeho overenie vypršalo.<br><br>Pripojte sa na internet a otvorte <a href="/account.html" style="color:#d989ff">Moje hry</a>.';return;
+  }
+  try{const owned=await verifyOnline();unlock(requested,owned,false);return;}catch(err){
+    if(cachedValid){$("loadingText").textContent="Sieťové overenie zlyhalo · spúšťam bezpečne uložený offline prístup.";unlock(requested,cached.products,true);return;}
+    location.href="/account.html";
+  }
+}
+boot();
 </script></body></html>

@@ -1,0 +1,10 @@
+{
+  "name": "MR GREY'S DATE NIGHT",
+  "short_name": "DATE NIGHT",
+  "start_url": "/account.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#070609",
+  "theme_color": "#070609",
+  "description": "MR GREY'S DATE NIGHT – vaše zakúpené hry aj na cestách."
+}
