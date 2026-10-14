@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+import {sendCrmMail} from "./_crm-mail.js";
 
 const SITE="https://datenight.mrgreysroom.sk";
 const FROM='"MR GREY’S DATE NIGHT" <info@mrgreysroom.sk>';
@@ -35,14 +35,13 @@ export default async function handler(req,res){
   const product=String(req.body?.product||"").trim().toLowerCase();
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({error:"Invalid email"});
   if(!NAMES[product]) return res.status(400).json({error:"Invalid product"});
-  if(!process.env.SMTP_PASSWORD) return res.status(503).json({error:"SMTP not configured"});
   try{
-    const transport=nodemailer.createTransport({host:"smtp.m1.websupport.sk",port:587,secure:false,requireTLS:true,auth:{user:"info@mrgreysroom.sk",pass:process.env.SMTP_PASSWORD}});
     const name=NAMES[product];
-    await transport.sendMail({from:FROM,to:email,subject:`${name} je váš ✕`,html:html(product)});
+    await sendCrmMail({kind:"purchase",email,product,subject:`${name} je váš ✕`,html:html(product)});
     return res.status(200).json({ok:true});
   }catch(e){
     console.error("Purchase email failed",e?.message||e);
     return res.status(500).json({error:"Send failed"});
   }
 }
+

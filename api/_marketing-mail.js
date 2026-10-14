@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+import {sendCrmMail} from "./_crm-mail.js";
 import crypto from "crypto";
 
 const SITE="https://datenight.mrgreysroom.sk";
@@ -62,11 +62,8 @@ export function template(key,email,packs=[],language="sk"){
  return {subject:row[0],html:shell(row[0],row[1],body,row[3],email,lang)};
 }
 
-export function transporter(){
- if(!process.env.SMTP_PASSWORD) throw new Error("SMTP_PASSWORD missing");
- return nodemailer.createTransport({host:"smtp.m1.websupport.sk",port:587,secure:false,requireTLS:true,auth:{user:"info@mrgreysroom.sk",pass:process.env.SMTP_PASSWORD}});
-}
-export async function sendMarketingMail({email,key,packs,language}){
+export async function sendMarketingMail({email,key,packs,language,jobId}){
  const msg=template(key,email,packs,language);
- return transporter().sendMail({from:FROM,to:email,subject:msg.subject,html:msg.html});
+ return sendCrmMail({kind:"marketing",queueId:jobId,...msg});
 }
+

@@ -21,10 +21,10 @@ async function sendImmediateIfDue(secret, lead){
   const job=(await qr.json().catch(()=>[]))[0];
   if(!job) return {sent:false};
   try{
-    await sendMarketingMail({email:lead.email,key:"demo_1_immediate",packs:lead.selected_packs||[],language:cleanLang(lead.language)});
+    const result=await sendMarketingMail({jobId:job.id,email:lead.email,key:"demo_1_immediate",packs:lead.selected_packs||[],language:cleanLang(lead.language)});
     const now=new Date().toISOString();
     await fetch(`${SB}/rest/v1/marketing_email_queue?id=eq.${encodeURIComponent(job.id)}`,{
-      method:"PATCH",headers:sbHeaders(secret,"return=minimal"),body:JSON.stringify({status:"sent",sent_at:now,attempts:1,last_error:null,updated_at:now})
+      method:"PATCH",headers:sbHeaders(secret,"return=minimal"),body:JSON.stringify({status:result.skipped?"cancelled":"sent",sent_at:result.skipped?null:now,attempts:1,last_error:null,updated_at:now})
     });
     return {sent:true};
   }catch(e){
@@ -63,3 +63,4 @@ export default async function handler(req,res){
     return res.status(200).json({ok:true,demoFallback:true});
   }
 }
+
