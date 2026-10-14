@@ -26,7 +26,7 @@ async function sendImmediateIfDue(secret, lead){
     await fetch(`${SB}/rest/v1/marketing_email_queue?id=eq.${encodeURIComponent(job.id)}`,{
       method:"PATCH",headers:sbHeaders(secret,"return=minimal"),body:JSON.stringify({status:result.skipped?"cancelled":"sent",sent_at:result.skipped?null:now,attempts:1,last_error:null,updated_at:now})
     });
-    return {sent:true};
+    return {sent:!result.skipped};
   }catch(e){
     const now=new Date().toISOString();
     await fetch(`${SB}/rest/v1/marketing_email_queue?id=eq.${encodeURIComponent(job.id)}`,{

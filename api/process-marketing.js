@@ -10,15 +10,15 @@ export default async function handler(req,res){
  const q=encodeURIComponent(new Date().toISOString());
  const r=await fetch(`${SB}/rest/v1/marketing_email_queue?status=eq.pending&scheduled_for=lte.${q}&select=id,lead_id,email,template_key,attempts&order=scheduled_for.asc&limit=20`,{headers:h(secret)});
  if(!r.ok) return res.status(500).json({error:"Queue read failed"});
- const jobs=await r.json();let sent=0,failed=0;
+ const jobs=await r.json();let sent=0,failed=0,skipped=0;
  for(const job of jobs){
   const lr=await fetch(`${SB}/rest/v1/marketing_leads?id=eq.${job.lead_id}&select=marketing_consent,unsubscribed_at,selected_packs,language&limit=1`,{headers:h(secret)});
   const lead=(await lr.json().catch(()=>[]))[0];
   if(!lead?.marketing_consent||lead?.unsubscribed_at){await fetch(`${SB}/rest/v1/marketing_email_queue?id=eq.${job.id}`,{method:"PATCH",headers:h(secret),body:JSON.stringify({status:"cancelled",updated_at:new Date().toISOString()})});continue;}
   await fetch(`${SB}/rest/v1/marketing_email_queue?id=eq.${job.id}&status=eq.pending`,{method:"PATCH",headers:h(secret),body:JSON.stringify({status:"processing",attempts:(job.attempts||0)+1,updated_at:new Date().toISOString()})});
-  try{const result=await sendMarketingMail({jobId:job.id,email:job.email,key:job.template_key,packs:lead.selected_packs||[],language:lead.language||"sk"});await fetch(`${SB}/rest/v1/marketing_email_queue?id=eq.${job.id}`,{method:"PATCH",headers:h(secret),body:JSON.stringify({status:result.skipped?"cancelled":"sent",sent_at:result.skipped?null:new Date().toISOString(),last_error:null,updated_at:new Date().toISOString()})});sent++;}
+  try{const result=await sendMarketingMail({jobId:job.id,email:job.email,key:job.template_key,packs:lead.selected_packs||[],language:lead.language||"sk"});await fetch(`${SB}/rest/v1/marketing_email_queue?id=eq.${job.id}`,{method:"PATCH",headers:h(secret),body:JSON.stringify({status:result.skipped?"cancelled":"sent",sent_at:result.skipped?null:new Date().toISOString(),last_error:null,updated_at:new Date().toISOString()})});if(result.skipped)skipped++;else sent++;}
   catch(e){const attempts=(job.attempts||0)+1;await fetch(`${SB}/rest/v1/marketing_email_queue?id=eq.${job.id}`,{method:"PATCH",headers:h(secret),body:JSON.stringify({status:attempts>=3?"failed":"pending",last_error:String(e?.message||e).slice(0,500),updated_at:new Date().toISOString()})});failed++;}
  }
- return res.status(200).json({ok:true,processed:jobs.length,sent,failed});
+ return res.status(200).json({ok:true,processed:jobs.length,sent,failed,skipped});
 }
 
