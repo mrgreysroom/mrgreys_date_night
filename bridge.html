@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <meta name="theme-color" content="#070609">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex,nofollow">
 <title>MR GREY'S DATE NIGHT</title>
 <style>
 *{box-sizing:border-box}
@@ -38,7 +40,7 @@ h1{font-size:28px;margin:8px 0 9px}
  <h1 id="title">Otváram vašu hru…</h1>
  <p class="sub" id="sub">Bez ďalšieho prihlasovania. O chvíľu ste v hre.</p>
  <div class="error" id="error"></div>
- <a class="back" id="back" href="https://mrgrey.sk/club">Späť do MR GREY'S CLUB</a>
+ <a class="back" id="back" href="https://www.mrgrey.sk/club">Späť do MR GREY'S CLUB</a>
 </div>
 
 <script type="module">
@@ -47,16 +49,18 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 const supabase=createClient(
  "https://siferzggaubvtjlqdckj.supabase.co",
  "sb_publishable_5V6HZj-kn5B9CVFWrGDR8g_xEWKdJwu",
- {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}
+ {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}}
 );
 
 const q=new URLSearchParams(location.search);
-const tokenHash=q.get('token_hash')||'';
+const tokenHash=new URLSearchParams(location.hash.slice(1)).get('token_hash')||q.get('token_hash')||'';
 const pack=q.get('pack')||'romantic';
 const lang=(q.get('lang')||'sk').toLowerCase();
 
 const validPacks=new Set(['romantic','secrets','dare','afterdark','complete']);
 const packSafe=validPacks.has(pack)?pack:'romantic';
+// Scrub both legacy query credentials and new fragment credentials before any network call.
+history.replaceState({},'',`/bridge?pack=${encodeURIComponent(packSafe)}&lang=${encodeURIComponent(lang)}`);
 
 const i18n={
  sk:{
@@ -109,12 +113,12 @@ try{
  if(error||!data?.session)throw error||new Error('no session');
 
  // Remove the one-time token from browser history before entering the game.
- history.replaceState({},'',`/bridge.html?pack=${encodeURIComponent(packSafe)}&lang=${encodeURIComponent(lang)}`);
+ history.replaceState({},'',`/bridge?pack=${encodeURIComponent(packSafe)}&lang=${encodeURIComponent(lang)}`);
 
  // play.html already checks the persisted Supabase session + entitlements.
- location.replace(`/play.html?pack=${encodeURIComponent(packSafe)}`);
+ location.replace(`/play?pack=${encodeURIComponent(packSafe)}&lang=${encodeURIComponent(lang)}`);
 }catch(e){
- console.error('MR GREYS bridge error',e);
+ console.error('MR GREYS bridge verification failed');
  fail();
 }
 </script>

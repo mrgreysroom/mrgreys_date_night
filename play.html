@@ -41,7 +41,12 @@ function saveOffline(products, identity={}){const list=[...new Set(products.filt
 function decodeSession(raw){try{if(raw.startsWith('base64-'))raw=decodeURIComponent(escape(atob(raw.slice(7))));return JSON.parse(raw)}catch(e){return null}}
 function getStoredSession(){for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i)||'';if(key.startsWith('sb-')&&key.endsWith('-auth-token')){const value=decodeSession(localStorage.getItem(key)||'');if(value&&value.access_token)return value}}return null}
 async function verifyOnline(){
-  const session=getStoredSession();if(!session||!session.access_token)throw new Error('NO_SESSION');
+  // Refresh an expired persisted session before the entitlement request. The game used to read a stale raw token forever.
+  const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/+esm');
+  const client=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+  const {data,error}=await client.auth.getSession();
+  if(error)throw new Error('AUTH_EXPIRED');
+  const session=data?.session;if(!session?.access_token)throw new Error('NO_SESSION');
   const res=await fetch(`${SUPABASE_URL}/rest/v1/entitlements?select=product_code`,{headers:{apikey:SUPABASE_PUBLISHABLE,Authorization:`Bearer ${session.access_token}`,Accept:'application/json'},cache:'no-store'});
   if(res.status===401||res.status===403)throw new Error('AUTH_EXPIRED');
   if(!res.ok)throw new Error('VERIFY_FAILED');

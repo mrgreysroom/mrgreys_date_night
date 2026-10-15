@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'mrg-date-night-offline-v1';
+const CACHE_VERSION = 'mrg-date-night-offline-v2-auth-bridge';
 const CORE_CACHE = `${CACHE_VERSION}-core`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
@@ -70,8 +70,8 @@ self.addEventListener('message', (event) => {
 
 function isGameAsset(url) {
   return url.origin === self.location.origin && (
-    url.pathname === '/play.html' ||
-    url.pathname === '/account.html' ||
+    url.pathname === '/play.html' || url.pathname === '/play' ||
+    url.pathname === '/account.html' || url.pathname === '/account' ||
     url.pathname === '/i18n-core.js' ||
     url.pathname === '/i18n-cards.js' ||
     url.pathname === '/manifest.webmanifest' ||
