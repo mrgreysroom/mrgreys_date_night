@@ -1,3 +1,4 @@
+import {PLN_PRICES,PRICING_VERSION} from "./_pricing.js";
 const PRICE_ENV = {
   romantic: "STRIPE_PRICE_ROMANTIC",
   secrets: "STRIPE_PRICE_SECRETS",
@@ -14,12 +15,13 @@ export default async function handler(req,res){
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({error:"Email is required"});
   const rawLang=String(req.body?.language||"sk").toLowerCase();
   const language=VALID_LANGS.has(rawLang)?rawLang:"sk";
-  const price=process.env[PRICE_ENV[product]];
+  const price=language==="pl"?PLN_PRICES[product]:process.env[PRICE_ENV[product]];
   const secret=process.env.STRIPE_SECRET_KEY;
   if(!secret||!price) return res.status(503).json({error:"Stripe is not configured"});
   const origin="https://datenight.mrgreysroom.sk";
   const p=new URLSearchParams();
   p.append("mode","payment");
+  p.append("adaptive_pricing[enabled]","false");
   p.append("locale",language==="cz"?"cs":language);
   p.append("line_items[0][price]",price);
   p.append("line_items[0][quantity]","1");
@@ -27,6 +29,7 @@ export default async function handler(req,res){
   p.append("cancel_url",`${origin}/?payment=cancelled&lang=${language}#try`);
   p.append("metadata[product_code]",product);
   p.append("metadata[language]",language);
+  p.append("metadata[pricing_version]",PRICING_VERSION);
   p.append("allow_promotion_codes","true");
   p.append("customer_email",email);
   try{

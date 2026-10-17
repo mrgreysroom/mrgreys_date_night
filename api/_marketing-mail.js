@@ -43,7 +43,7 @@ const copy={
   demo_1_immediate:["Wasz Date Night właśnie się zaczyna ✕","Wybraliście dwie pierwsze energie wieczoru.","Osiem kart to był tylko przedsmak. Jeśli zrobiło się ciekawie, reszta wieczoru już na Was czeka.","WRÓĆ DO DATE NIGHT ✕"],
   demo_2_special_x:["SPECIAL X nie kończy się na ostatniej karcie 😈","Niektóre karty mają ciąg dalszy.","Jedne wyzwania kończą się po odwróceniu karty. Inne zostają z Wami do następnego dnia. Właśnie na tym polega SPECIAL X.","ODBLOKUJ DATE NIGHT ✕"],
   demo_3_pack_followup:["Który pakiet wciągnął Was bardziej?","Wróćcie do klimatu, przy którym zrobiło się najciekawiej.","W demo wybraliście <strong>{packs}</strong>. Możecie odblokować ten pakiet, do którego chcecie wrócić — albo od razu cały zestaw.","ODBLOKUJ MÓJ PAKIET ✕"],
-  demo_4_complete:["4 gry. Jeden dostęp. X COMPLETE.","Cały Date Night bez wybierania tylko jednego klimatu.","ROMANTIC, SECRETS, DARE i AFTER DARK w jednym dostępie. X COMPLETE w cenie startowej <strong>19,99 €</strong> — jednorazowo.","ODBLOKUJ X COMPLETE ✕"],
+  demo_4_complete:["4 gry. Jeden dostęp. X COMPLETE.","Cały Date Night bez wybierania tylko jednego klimatu.","ROMANTIC, SECRETS, DARE i AFTER DARK w jednym dostępie. X COMPLETE w cenie <strong>95 zł</strong> — jednorazowo.","ODBLOKUJ X COMPLETE ✕"],
   demo_5_last_call:["Może dzisiejszy wieczór nie musi być zwyczajny…","Date Night nadal na Was czeka.","Jeśli odłożyliście demo na później, być może właśnie dziś jest dobry moment, żeby sprawdzić, co było dalej.","WRÓĆ DO DATE NIGHT ✕"]
  },
  en:{

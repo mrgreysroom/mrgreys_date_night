@@ -1,9 +1,10 @@
-const CACHE_VERSION = 'mrg-date-night-offline-v2-auth-bridge';
+const CACHE_VERSION = 'mrg-date-night-offline-v3-pln-pricing';
 const CORE_CACHE = `${CACHE_VERSION}-core`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 const CORE_GAME_FILES = [
   '/play.html',
+  '/pricing.js',
   '/i18n-core.js',
   '/i18n-cards.js',
   '/locales/cards-sk.json',
@@ -72,6 +73,7 @@ function isGameAsset(url) {
   return url.origin === self.location.origin && (
     url.pathname === '/play.html' || url.pathname === '/play' ||
     url.pathname === '/account.html' || url.pathname === '/account' ||
+    url.pathname === '/pricing.js' ||
     url.pathname === '/i18n-core.js' ||
     url.pathname === '/i18n-cards.js' ||
     url.pathname === '/manifest.webmanifest' ||

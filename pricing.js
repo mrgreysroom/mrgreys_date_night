@@ -1,0 +1,2 @@
+// Generated from MR GREY’S WORLD lib/pricing.json; fixed retail PLN prices, not live FX.
+(function(){const prices={"599": 29, "699": 35, "799": 39, "1999": 95};window.MRG_PRICE_TEXT=function(text,lang){if(lang!=='pl'||typeof text!=='string')return text;return text.replace(/(?:€\s*(\d+[.,]\d{2})|(\d+[.,]\d{2})\s*(?:€|EUR))/g,function(whole,a,b){const amount=Math.round(Number((a||b).replace(',','.'))*100);return prices[amount]?prices[amount]+' zł':whole})};})();

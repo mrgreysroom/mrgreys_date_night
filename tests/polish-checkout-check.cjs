@@ -2,6 +2,7 @@ const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict'),cry
 const strip=p=>fs.readFileSync(p,'utf8').replace(/^import .*\n/gm,'').replace(/export default async function handler/,'async function handler').replace(/export const config/,'const config')
 let requests=[],syncs=0
 const ctx=vm.createContext({URLSearchParams,Buffer,Date,crypto,Set,console,process:{env:{STRIPE_SECRET_KEY:'fixture',STRIPE_PRICE_COMPLETE:'fixture-price',STRIPE_WEBHOOK_SECRET:'fixture-secret',SUPABASE_SECRET_KEY:'fixture'}},upsertMailerLiteContact:async()=>{syncs++},fetch:async(url,args)=>{requests.push({url,args});return {ok:true,json:async()=>({url:'https://checkout.stripe.com/fixture'})}}})
+vm.runInContext(fs.readFileSync('api/_pricing.js','utf8').replace(/export /g,''),ctx)
 vm.runInContext('(function(){'+strip('api/create-checkout.js')+';this.checkout=handler}).call(this)',ctx)
 vm.runInContext('(function(){'+strip('api/stripe-webhook.js')+';this.hook=handler}).call(this)',ctx)
 const response=()=>({status(n){this.code=n;return this},json(body){this.body=body;return this}})
