@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'mrg-date-night-offline-v3-pln-pricing';
+const CACHE_VERSION = 'mrg-date-night-offline-v4-polish-flow';
 const CORE_CACHE = `${CACHE_VERSION}-core`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 

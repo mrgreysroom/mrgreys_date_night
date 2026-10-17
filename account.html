@@ -75,7 +75,7 @@ async function prepareOffline(showStatus=true){
 function refreshOfflineStatus(){
   const cached=readOfflineAccess(),text=$("offlineText"),btn=$("offlineBtn");
   if(!cached){text.textContent="Najprv online overíme vaše zakúpené hry a potom ich uložíme do zariadenia.";text.className="offlineText";btn.textContent="PRIPRAVIŤ HRU OFFLINE";return}
-  const until=new Date(cached.expiresAt).toLocaleDateString('sk-SK');
+  const until=new Date(cached.expiresAt).toLocaleDateString(({sk:'sk-SK',cz:'cs-CZ',pl:'pl-PL',en:'en-GB'})[window.MRG_LANGUAGE]||'sk-SK');
   text.textContent=`Prístup je uložený v tomto zariadení. Offline overenie platí do ${until}; pri každom online otvorení sa automaticky obnoví.`;text.className="offlineText offlineOk";btn.textContent="OBNOVIŤ OFFLINE HRU";
 }
 const products=[
@@ -138,7 +138,7 @@ $("magicForm").addEventListener("submit",async e=>{
   btn.disabled=true; btn.textContent="ODOSIELAM…";
   const {error}=await supabase.auth.signInWithOtp({
     email,
-    options:{emailRedirectTo:location.origin+"/account.html"}
+    options:{emailRedirectTo:location.origin+"/account.html?lang="+encodeURIComponent(window.MRG_LANGUAGE||"sk")}
   });
   if(error){
     btn.disabled=false; btn.textContent="POSLAŤ PRIHLASOVACÍ ODKAZ";
