@@ -106,6 +106,12 @@ export default async function handler(req, res) {
     return res.status(200).json({ received: true, pending: true });
   }
 
+  // World purchases are fulfilled by the World endpoint on the same Stripe account.
+  // Acknowledge them here instead of retrying a missing product_code forever.
+  if (session.mode !== "payment" || session.metadata?.app === "mrgreys_world") {
+    return res.status(200).json({ received: true, ignored: true });
+  }
+
   const email = String(
     session.customer_details?.email ||
     session.customer_email ||
@@ -136,6 +142,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         email,
         product_code: product,
+        language: ["sk","cz","pl","en"].includes(session.metadata?.language) ? session.metadata.language : "sk",
         stripe_session_id: session.id
       })
     }

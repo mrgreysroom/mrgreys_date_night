@@ -20,6 +20,7 @@ export default async function handler(req,res){
   const origin="https://datenight.mrgreysroom.sk";
   const p=new URLSearchParams();
   p.append("mode","payment");
+  p.append("locale",language==="cz"?"cs":language);
   p.append("line_items[0][price]",price);
   p.append("line_items[0][quantity]","1");
   p.append("success_url",`${origin}/success.html?session_id={CHECKOUT_SESSION_ID}&lang=${language}`);

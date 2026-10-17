@@ -55,7 +55,8 @@ const supabase=createClient(
 const q=new URLSearchParams(location.search);
 const tokenHash=new URLSearchParams(location.hash.slice(1)).get('token_hash')||q.get('token_hash')||'';
 const pack=q.get('pack')||'romantic';
-const lang=(q.get('lang')||'sk').toLowerCase();
+const requestedLang=(q.get('lang')||'sk').toLowerCase();
+const lang=['sk','cs','cz','pl','en'].includes(requestedLang)?requestedLang:'sk';
 
 const validPacks=new Set(['romantic','secrets','dare','afterdark','complete']);
 const packSafe=validPacks.has(pack)?pack:'romantic';
@@ -89,11 +90,12 @@ const i18n={
  }
 };
 
-const t=i18n[lang]||i18n.sk;
+const t=i18n[lang==='cz'?'cs':lang]||i18n.sk;
 document.documentElement.lang=lang;
 document.getElementById('title').textContent=t.title;
 document.getElementById('sub').textContent=t.sub;
 document.getElementById('back').textContent=t.back;
+document.getElementById('back').href='https://www.mrgrey.sk/club?lang='+(lang==='cz'?'cs':lang);
 
 function fail(){
  document.getElementById('spinner').style.display='none';

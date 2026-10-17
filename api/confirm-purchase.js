@@ -14,7 +14,7 @@ export default async function handler(req,res){
   const rr=await fetch("https://siferzggaubvtjlqdckj.supabase.co/rest/v1/entitlements?on_conflict=stripe_session_id",{
     method:"POST",
     headers:{"apikey":supabaseSecret,"Authorization":`Bearer ${supabaseSecret}`,"Content-Type":"application/json","Prefer":"resolution=ignore-duplicates,return=minimal"},
-    body:JSON.stringify({email,product_code:product,stripe_session_id:sessionId})
+    body:JSON.stringify({email,product_code:product,language:["sk","cz","pl","en"].includes(s.metadata?.language)?s.metadata.language:"sk",stripe_session_id:sessionId})
   });
   if(!rr.ok) return res.status(502).json({error:"Could not store entitlement"});
   res.status(200).json({ok:true,email,product});
