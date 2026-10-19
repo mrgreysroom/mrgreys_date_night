@@ -1,3 +1,4 @@
+import {capturePayment} from "./_acquisition.js";
 import { upsertMailerLiteContact } from "./_mailerlite.js";
 import crypto from "crypto";
 
@@ -154,6 +155,8 @@ export default async function handler(req, res) {
     // 5xx makes Stripe retry the webhook.
     return res.status(500).json({ error: "Could not store entitlement" });
   }
+
+  try{await capturePayment(session)}catch{return res.status(500).json({error:"Payment metrics sync failed"})}
 
   // CRM sync is intentionally non-blocking: a MailerLite outage must never
   // prevent a paid customer from receiving access to the game.

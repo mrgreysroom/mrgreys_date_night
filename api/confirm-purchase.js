@@ -1,3 +1,5 @@
+import {createHash} from "node:crypto";
+import {capturePayment} from "./_acquisition.js";
 export default async function handler(req,res){
   if(!["GET","POST"].includes(req.method)) return res.status(405).json({error:"Method not allowed"});
   const sessionId=String(req.query?.session_id||req.body?.session_id||"");
@@ -17,5 +19,7 @@ export default async function handler(req,res){
     body:JSON.stringify({email,product_code:product,language:["sk","cz","pl","en"].includes(s.metadata?.language)?s.metadata.language:"sk",stripe_session_id:sessionId})
   });
   if(!rr.ok) return res.status(502).json({error:"Could not store entitlement"});
-  res.status(200).json({ok:true,email,product});
+  await capturePayment(s);
+  res.setHeader("Cache-Control","private, no-store");
+  res.status(200).json({ok:true,product,purchase:s.livemode!==false&&/^cs_live_/.test(s.id)?{eventId:"game_"+createHash("sha256").update(s.id).digest("hex"),amount:s.amount_total,currency:String(s.currency).toUpperCase()}:null});
 }

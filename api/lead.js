@@ -1,3 +1,4 @@
+import {captureContact} from "./_acquisition.js";
 import { sendMarketingMail } from "./_marketing-mail.js";
 
 const VALID_PACKS = new Set(["romantic","secrets","dare","afterdark"]);
@@ -56,6 +57,7 @@ export default async function handler(req,res){
     });
     if(!r.ok) throw new Error(`lead ${r.status} ${await r.text()}`);
     const lead=(await r.json().catch(()=>[]))[0];
+    await captureContact(email,req.body?.attribution,language);
     const immediate=marketingConsent?await sendImmediateIfDue(secret,lead):{sent:false};
     return res.status(200).json({ok:true,leadStored:true,language,immediateSent:Boolean(immediate.sent)});
   } catch(err) {
@@ -63,4 +65,3 @@ export default async function handler(req,res){
     return res.status(200).json({ok:true,demoFallback:true});
   }
 }
-

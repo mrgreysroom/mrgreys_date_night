@@ -1,3 +1,4 @@
+import {acquisitionMetadata,captureContact} from "./_acquisition.js";
 import {PLN_PRICES,PRICING_VERSION} from "./_pricing.js";
 const PRICE_ENV = {
   romantic: "STRIPE_PRICE_ROMANTIC",
@@ -32,11 +33,13 @@ export default async function handler(req,res){
   p.append("metadata[pricing_version]",PRICING_VERSION);
   p.append("allow_promotion_codes","true");
   p.append("customer_email",email);
+  acquisitionMetadata(p,req.body?.attribution||{});
   try{
     const r=await fetch("https://api.stripe.com/v1/checkout/sessions",{method:"POST",headers:{"Authorization":`Bearer ${secret}`,"Content-Type":"application/x-www-form-urlencoded"},body:p.toString()});
     const data=await r.json().catch(()=>({}));
     if(!r.ok){ console.error("Stripe checkout failed",r.status,data?.error?.message||""); return res.status(r.status).json({error:data?.error?.message||"Stripe error"}); }
     if(!data?.url) return res.status(502).json({error:"Stripe did not return checkout URL"});
+    try{await captureContact(email,req.body?.attribution,language)}catch{}
     return res.status(200).json({url:data.url});
   }catch(e){
     console.error("Checkout request failed",e?.message||e);
