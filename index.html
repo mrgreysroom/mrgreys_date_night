@@ -103,6 +103,7 @@ border:1px solid rgba(201,91,255,.18);position:relative;overflow:hidden;display:
 .completeBuy:hover{transform:translateY(-1px);filter:brightness(1.08)}
 .directBuyNote{text-align:center;margin-top:12px;color:#9d93a3;font-size:11px;line-height:1.45}
 
+.heroOffer{display:grid;gap:12px;max-width:410px;margin:20px auto 18px}.heroOffer .completeBuy{margin:0}.heroOffer a{color:#dccbea;font-size:14px;text-underline-offset:3px}
 </style>
 
 <script type="module" src="/acquisition.js"></script><script src="/pricing.js"></script><script src="/i18n-core.js"></script>
@@ -117,6 +118,7 @@ border:1px solid rgba(201,91,255,.18);position:relative;overflow:hidden;display:
     <div class="brand"><img src="assets/mrgreys-x.jpg" alt="Mr Grey's Room X"><div class="brandline">MR GREY'S ROOM</div></div>
     <div style="margin-top:18px"><span class="eyebrow">18+ · PRIVATE DATE NIGHT EXPERIENCE</span></div>
     <h1>Večer, ktorý nezačne<br>obyčajnou otázkou.</h1>
+    <div class="heroOffer"><button id="featuredBuy" class="completeBuy directBuy" data-product="complete" type="button">✕ KÚPIŤ X COMPLETE — 19,99 €</button><a href="#try" id="featuredDemo">Vyskúšať 8 kariet zdarma</a></div>
     <p class="heroLead">Zmyselná hra pre páry, ktorá mieša otázky, tajomstvá, bozky, dotyky a výzvy. Intenzitu si vyberiete sami.</p>
     <div class="trust"><span>🔐 diskrétne</span><span>✕ bez registrácie na demo</span><span>😈 8 kariet zdarma</span><span>♡ každú kartu možno preskočiť</span><span>∞ kúpené hry ostávajú navždy</span></div><a class="accountLink" href="account.html">UŽ MÁM HRU · MOJE HRY →</a>
   </div>
@@ -241,6 +243,12 @@ const CARDS=(window.MRG_CARD_DECKS[window.MRG_LANGUAGE]||window.MRG_CARD_DECKS.s
 const META={"romantic": {"name": "ROMANTIC", "icon": "🖤", "price": "5,99 €", "price_env": "STRIPE_PRICE_ROMANTIC", "desc": "Zmyselná romantika, blízkosť, bozky, dotyky a otázky, ktoré vás priblížia."}, "secrets": {"name": "SECRETS", "icon": "🔐", "price": "6,99 €", "price_env": "STRIPE_PRICE_SECRETS", "desc": "Túžby, tajomstvá a otázky, ktoré sa často nepovedia nahlas."}, "dare": {"name": "DARE", "icon": "😈", "price": "6,99 €", "price_env": "STRIPE_PRICE_DARE", "desc": "Flirt, napätie, vedenie, bozky a odvážnejšie výzvy."}, "afterdark": {"name": "AFTER DARK", "icon": "🌙", "price": "7,99 €", "price_env": "STRIPE_PRICE_AFTERDARK", "desc": "Najodvážnejšia hra: erotické napätie, dotyky, bozky, hravé polohy a X BREAK."}};
 Object.assign(META,Object.fromEntries(Object.entries(window.MRG_I18N.meta[window.MRG_LANGUAGE]||{}).filter(([k])=>k!=="complete").map(([k,v])=>[k,{...META[k],desc:v[1]}])));
 const $=id=>document.getElementById(id);
+const requestedOffer=new URLSearchParams(location.search).get("offer");
+const featuredProduct=["secrets","afterdark"].includes(requestedOffer)?requestedOffer:"complete";
+const catalogButton=product=>document.querySelector('.directBuy[data-product="'+product+'"]:not(#featuredBuy)');
+$("featuredBuy").dataset.product=featuredProduct;
+$("featuredBuy").textContent=catalogButton(featuredProduct).textContent;
+$("featuredDemo").textContent=({cz:"Vyzkoušet 8 karet zdarma",pl:"Wypróbuj 8 kart za darmo",en:"Try 8 cards for free"})[window.MRG_LANGUAGE]||"Vyskúšať 8 kariet zdarma";
 let leadEmail="",chosen=[],deck=[],idx=0,revealed=false,interlude=false,firstPackDone=false,marketingOk=false;
 
 function showOnly(id){
@@ -317,7 +325,14 @@ function advance(){
 }
 function showPaywall(){
   $("gameButtons").classList.add("hidden");const a=chosen[0],b=chosen[1];
-  $("gameArea").innerHTML=`<div class="paywall"><div style="font-size:58px">✕</div><div class="devTitle">Ktorý vás bavil viac? 😈</div><div class="devSub">Ukážku máte za sebou. Pokračujte v jednom balíčku alebo odomknite celý Date Night.</div><div class="payBtns"><button class="primary buy" data-product="${a}">ODOMKNÚŤ ${META[a].name} — ${META[a].price}</button><button class="primary buy" data-product="${b}">ODOMKNÚŤ ${META[b].name} — ${META[b].price}</button><button class="primary buy" data-product="complete">✕ X COMPLETE — 19,99 €</button><div class="fine"><span class="old">29,99 €</span> · launch cena · všetko + MIX MODE</div><button class="secondary" id="again" type="button">SPÄŤ NA LANDING PAGE</button></div></div>`;
+  const products=[...new Set([featuredProduct,a,b,"complete"])];
+  const purchaseOptions=products.map(product=>{
+    const button=catalogButton(product).cloneNode(true);
+    button.className=product===featuredProduct?"primary buy":"secondary buy";
+    const note=product==="complete"?'<div class="fine"><span class="old">29,99 €</span> · launch cena · všetko + MIX MODE</div>':"";
+    return button.outerHTML+note;
+  }).join("");
+  $("gameArea").innerHTML=`<div class="paywall"><div style="font-size:58px">✕</div><div class="devTitle">Ktorý vás bavil viac? 😈</div><div class="devSub">Ukážku máte za sebou. Pokračujte v jednom balíčku alebo odomknite celý Date Night.</div><div class="payBtns">${purchaseOptions}<button class="secondary" id="again" type="button">SPÄŤ NA LANDING PAGE</button></div></div>`;
   document.querySelectorAll(".buy").forEach(btn=>btn.addEventListener("click",()=>beginCheckout(btn.dataset.product,btn)));
   $("again").addEventListener("click",()=>showOnly("landing"));
 }
