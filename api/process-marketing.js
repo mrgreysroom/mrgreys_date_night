@@ -15,8 +15,14 @@ export default async function handler(req,res){
   const lr=await fetch(`${SB}/rest/v1/marketing_leads?id=eq.${job.lead_id}&select=marketing_consent,unsubscribed_at,selected_packs,language&limit=1`,{headers:h(secret)});
   const lead=(await lr.json().catch(()=>[]))[0];
   if(!lead?.marketing_consent||lead?.unsubscribed_at){await fetch(`${SB}/rest/v1/marketing_email_queue?id=eq.${job.id}`,{method:"PATCH",headers:h(secret),body:JSON.stringify({status:"cancelled",updated_at:new Date().toISOString()})});continue;}
-  const salesKeys=new Set(["demo_1_immediate","demo_2_special_x","demo_3_pack_followup","demo_5_last_call","purchase_single_upgrade_day1","purchase_single_upgrade_day3"]);
-  const clubKeys=new Set(["purchase_complete_club_day3","demo_6_club_day10"]);
+  const salesKeys=new Set(["demo_1_immediate","demo_2_special_x","demo_3_pack_followup","demo_5_last_call","purchase_single_upgrade_day1","purchase_single_upgrade_day3","winter_reactivation_1"]);
+  const clubKeys=new Set(["purchase_complete_club_day3","demo_6_club_day10","winter_reactivation_3"]);
+  if(job.template_key==="winter_reactivation_1"||job.template_key==="winter_reactivation_2"||job.template_key==="winter_reactivation_3"){
+   const ent=await fetch(`${SB}/rest/v1/entitlements?email=eq.${encodeURIComponent(job.email)}&select=product_code&limit=30`,{headers:h(secret)});
+   if(!ent.ok){failed++;continue;}
+   const owned=(await ent.json()).map(x=>x.product_code);
+   if(job.template_key==="winter_reactivation_1"&&owned.includes("complete")){await fetch(`${SB}/rest/v1/marketing_email_queue?id=eq.${job.id}`,{method:"PATCH",headers:h(secret),body:JSON.stringify({status:"cancelled",updated_at:new Date().toISOString()})});skipped++;continue;}
+  }
   if(salesKeys.has(job.template_key)||clubKeys.has(job.template_key)){
    const ent=await fetch(`${SB}/rest/v1/entitlements?email=eq.${encodeURIComponent(job.email)}&select=product_code&limit=30`,{headers:h(secret)});
    if(!ent.ok){failed++;continue;}
