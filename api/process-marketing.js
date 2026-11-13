@@ -9,7 +9,7 @@ export default async function handler(req,res){
  const secret=process.env.SUPABASE_SECRET_KEY;if(!secret) return res.status(503).json({error:"Not configured"});
  const q=encodeURIComponent(new Date().toISOString());
  const r=await fetch(`${SB}/rest/v1/marketing_email_queue?status=eq.pending&scheduled_for=lte.${q}&select=id,lead_id,email,template_key,attempts&order=scheduled_for.asc&limit=20`,{headers:h(secret)});
- if(!r.ok) return res.status(500).json({error:"Queue read failed"});
+ if(!r.ok) return res.status(500).json({error:"Queue read failed",upstream_status:r.status,upstream_detail:(await r.text()).slice(0,450)});
  const jobs=await r.json();let sent=0,failed=0,skipped=0;
  for(const job of jobs){
   const lr=await fetch(`${SB}/rest/v1/marketing_leads?id=eq.${job.lead_id}&select=marketing_consent,unsubscribed_at,selected_packs,language&limit=1`,{headers:h(secret)});
