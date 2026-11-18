@@ -91,7 +91,15 @@ async function render(userFromAuth=null){
   currentUser=user||null;
   if(!user){$("login").classList.remove("hidden");$("library").classList.add("hidden");return;}
   $("login").classList.add("hidden");$("library").classList.remove("hidden");$("userEmail").textContent=user.email||"";
-  const {data,error}=await supabase.from("entitlements").select("product_code,purchased_at");
+  const {data:{session}}=await supabase.auth.getSession();
+  let data=null,error=null;
+  try {
+    if(!session?.access_token) throw new Error("Missing session");
+    const response=await fetch("/api/my-games",{headers:{Authorization:"Bearer "+session.access_token},cache:"no-store"});
+    if(!response.ok) throw new Error("Game lookup failed: "+response.status);
+    const payload=await response.json();
+    data=payload.games;
+  }catch(e){error=e;}
   if(error){$("games").innerHTML='<div class="msg">Nepodarilo sa načítať zakúpené hry. Skúste stránku obnoviť.</div>';refreshOfflineStatus();return;}
   currentEntitlements=data||[];
   saveOfflineAccess(user,currentEntitlements);
