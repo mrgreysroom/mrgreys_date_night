@@ -4,7 +4,21 @@ const SITE="https://datenight.mrgreysroom.sk";
 const FROM='"MR GREY’S DATE NIGHT" <info@mrgreysroom.sk>';
 const NAMES={romantic:"ROMANTIC",secrets:"SECRETS",dare:"DARE",afterdark:"AFTER DARK",complete:"X COMPLETE"};
 
-function html(product){
+async function purchaseLoginUrl(email) {
+  const key=process.env.SUPABASE_SECRET_KEY;
+  if(!key) throw new Error("Missing Supabase admin configuration");
+  const headers={apikey:key,"Content-Type":"application/json"};
+  if(key.startsWith("eyJ")) headers.Authorization="Bearer "+key;
+  const response=await fetch("https://siferzggaubvtjlqdckj.supabase.co/auth/v1/admin/generate_link",{
+    method:"POST",headers,body:JSON.stringify({type:"magiclink",email}),signal:AbortSignal.timeout(10000)
+  });
+  if(!response.ok) throw new Error("Could not generate purchase sign-in link ("+response.status+")");
+  const {hashed_token}=await response.json();
+  if(typeof hashed_token!=="string" || !/^[A-Za-z0-9_-]{32,256}$/.test(hashed_token)) throw new Error("Missing purchase sign-in token");
+  return SITE+"/account?lang=sk#token_hash="+encodeURIComponent(hashed_token);
+}
+
+function html(product,loginUrl){
   const name=NAMES[product]||"DATE NIGHT";
   return `<!doctype html><html><body style="margin:0;background:#08070a;color:#f5eff8;font-family:Arial,sans-serif">
   <div style="display:none;max-height:0;overflow:hidden">Platba prebehla úspešne. Vaša hra ${name} je pripravená.</div>
@@ -16,8 +30,8 @@ function html(product){
     <div style="font-size:42px;line-height:1;color:#c052ff;margin-bottom:18px">✕</div>
     <h1 style="font-size:25px;line-height:1.25;margin:0 0 16px;color:#fff">${name} je váš.</h1>
     <div style="font-size:16px;line-height:1.7;color:#cfc7d4">Vaša hra je pripravená. Otvorte ju v sekcii Moje hry.</div>
-    <a href="${SITE}/account" style="display:inline-block;margin-top:28px;padding:16px 26px;border-radius:999px;background:#a946d1;color:#fff;text-decoration:none;font-weight:700;letter-spacing:.5px">Otvoriť moje hry</a>
-    <div style="margin-top:26px;font-size:13px;line-height:1.65;color:#958b9a">Ak ešte nie ste prihlásení, zadajte e-mail použitý pri nákupe.</div>
+    <a href="${loginUrl}" style="display:inline-block;margin-top:28px;padding:16px 26px;border-radius:999px;background:#a946d1;color:#fff;text-decoration:none;font-weight:700;letter-spacing:.5px">Otvoriť moje hry</a>
+    <div style="margin-top:26px;font-size:13px;line-height:1.65;color:#958b9a">Odkaz vás prihlási a otvorí vaše hry. Po vypršaní odkazu si môžete vyžiadať nový na stránke Moje hry.</div>
     <div style="margin-top:30px;border-top:1px solid #2e2635;padding-top:20px;font-size:11px;line-height:1.55;color:#756d7a">Toto je servisný e-mail k vášmu nákupu MR GREY’S DATE NIGHT.</div>
   </td></tr></table></td></tr></table></body></html>`;
 }
@@ -37,7 +51,8 @@ export default async function handler(req,res){
   if(!NAMES[product]) return res.status(400).json({error:"Invalid product"});
   try{
     const name=NAMES[product];
-    await sendCrmMail({kind:"purchase",email,product,subject:`${name} je váš ✕`,html:html(product)});
+    const loginUrl=await purchaseLoginUrl(email);
+    await sendCrmMail({kind:"purchase",email,product,subject:`${name} je váš ✕`,html:html(product,loginUrl)});
     return res.status(200).json({ok:true});
   }catch(e){
     console.error("Purchase email failed",e?.message||e);

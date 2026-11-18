@@ -187,6 +187,24 @@ $("magicForm").addEventListener("submit",async e=>{
 
 $("offlineBtn").addEventListener("click",()=>prepareOffline(true));
 $("logout").addEventListener("click",async()=>{localStorage.removeItem(OFFLINE_KEY);await supabase.auth.signOut();render();});
+// The fragment is kept out of HTTP requests and removed before verification.
+const authFragment=new URLSearchParams(location.hash.slice(1));
+const purchaseToken=authFragment.get("token_hash");
+if(purchaseToken){
+  history.replaceState(history.state,"",location.pathname+location.search);
+  $("sendBtn").disabled=true;
+  $("loginMsg").textContent="Prihlasujem vás do Moje hry…";
+  try {
+    const {error}=await supabase.auth.verifyOtp({type:"email",token_hash:purchaseToken});
+    if(error) throw error;
+  } catch {
+    $("loginMsg").textContent="Tento odkaz už neplatí. Ak nie ste prihlásení, vyžiadajte si nový.";
+  } finally {
+    $("sendBtn").disabled=false;
+  }
+} else if(authFragment.has("error_code") || new URLSearchParams(location.search).has("error_code")){
+  $("loginMsg").textContent="Tento prihlasovací odkaz už neplatí. Vyžiadajte si nový.";
+}
 let authRenderTimer=null;
 supabase.auth.onAuthStateChange(()=>{
   clearTimeout(authRenderTimer);

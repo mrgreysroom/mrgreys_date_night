@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'mrg-date-night-offline-v7-owned-games';
+const CACHE_VERSION = 'mrg-date-night-offline-v8-purchase-login';
 const CORE_CACHE = `${CACHE_VERSION}-core`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
