@@ -112,6 +112,7 @@ async function render(userFromAuth=null){
 }
 
 let resendTimer=null;
+let loginRequestPending=false;
 function startCooldown(seconds=60){
   const btn=$("sendBtn"), note=$("loginMsg");
   let left=seconds;
@@ -135,19 +136,28 @@ function startCooldown(seconds=60){
 
 $("magicForm").addEventListener("submit",async e=>{
   e.preventDefault();
-  const email=$("email").value.trim().toLowerCase();
   const btn=$("sendBtn"), msg=$("loginMsg");
+  if(loginRequestPending || btn.disabled) return;
+  const email=$("email").value.trim().toLowerCase();
   msg.className="msg"; msg.textContent="";
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
     msg.className="msg err";
     msg.textContent="Zadajte prosím platnú e-mailovú adresu.";
     return;
   }
+  loginRequestPending=true;
   btn.disabled=true; btn.textContent="ODOSIELAM…";
-  const {error}=await supabase.auth.signInWithOtp({
-    email,
-    options:{emailRedirectTo:location.origin+"/account.html?lang="+encodeURIComponent(window.MRG_LANGUAGE||"sk")}
-  });
+  let error;
+  try {
+    ({error}=await supabase.auth.signInWithOtp({
+      email,
+      options:{emailRedirectTo:location.origin+"/account.html?lang="+encodeURIComponent(window.MRG_LANGUAGE||"sk")}
+    }));
+  } catch (requestError) {
+    error=requestError;
+  } finally {
+    loginRequestPending=false;
+  }
   if(error){
     btn.disabled=false; btn.textContent="POSLAŤ PRIHLASOVACÍ ODKAZ";
     msg.className="msg err";

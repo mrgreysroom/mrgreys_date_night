@@ -38,8 +38,6 @@ $("next").onclick=()=>{idx=(idx+1)%current.length;cardCounter++;render();};$("sh
 
 function readOffline(){try{const x=JSON.parse(localStorage.getItem(OFFLINE_KEY)||"null");return x&&Array.isArray(x.products)?x:null}catch(e){return null}}
 function saveOffline(products, identity={}){const list=[...new Set(products.filter(Boolean))];if(list.includes('complete'))ALL_PRODUCTS.forEach(x=>list.includes(x)||list.push(x));const now=Date.now();localStorage.setItem(OFFLINE_KEY,JSON.stringify({version:1,userId:identity.userId||'',email:identity.email||'',products:list,verifiedAt:now,expiresAt:now+OFFLINE_DAYS*86400000}));return list}
-function decodeSession(raw){try{if(raw.startsWith('base64-'))raw=decodeURIComponent(escape(atob(raw.slice(7))));return JSON.parse(raw)}catch(e){return null}}
-function getStoredSession(){for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i)||'';if(key.startsWith('sb-')&&key.endsWith('-auth-token')){const value=decodeSession(localStorage.getItem(key)||'');if(value&&value.access_token)return value}}return null}
 async function verifyOnline(){
   // Refresh an expired persisted session before the entitlement request. The game used to read a stale raw token forever.
   const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/+esm');
@@ -47,10 +45,10 @@ async function verifyOnline(){
   const {data,error}=await client.auth.getSession();
   if(error)throw new Error('AUTH_EXPIRED');
   const session=data?.session;if(!session?.access_token)throw new Error('NO_SESSION');
-  const res=await fetch(`${SUPABASE_URL}/rest/v1/entitlements?select=product_code`,{headers:{apikey:SUPABASE_PUBLISHABLE,Authorization:`Bearer ${session.access_token}`,Accept:'application/json'},cache:'no-store'});
+  const res=await fetch("/api/my-games",{headers:{Authorization:`Bearer ${session.access_token}`,Accept:'application/json'},cache:'no-store'});
   if(res.status===401||res.status===403)throw new Error('AUTH_EXPIRED');
   if(!res.ok)throw new Error('VERIFY_FAILED');
-  const rows=await res.json();return saveOffline((rows||[]).map(x=>x.product_code),{userId:session.user&&session.user.id,email:session.user&&session.user.email});
+  const {games}=await res.json();return saveOffline(games.map(x=>x.product_code),{userId:session.user&&session.user.id,email:session.user&&session.user.email});
 }
 async function registerSW(){if('serviceWorker' in navigator){try{await navigator.serviceWorker.register('/service-worker.js',{scope:'/'});}catch(e){}}}
 function unlock(requested,owned,offlineMode){
@@ -70,8 +68,8 @@ async function boot(){
     $("loading").classList.add("hidden");$("locked").classList.remove("hidden");$("locked").innerHTML='Offline prístup v tomto zariadení ešte nie je pripravený alebo jeho overenie vypršalo.<br><br>Pripojte sa na internet a otvorte <a href="/account.html" style="color:#d989ff">Moje hry</a>.';return;
   }
   try{const owned=await verifyOnline();unlock(requested,owned,false);return;}catch(err){
-    if(cachedValid){$("loadingText").textContent="Sieťové overenie zlyhalo · spúšťam bezpečne uložený offline prístup.";unlock(requested,cached.products,true);return;}
-    location.href="/account.html";
+    if(err.message==="NO_SESSION" || err.message==="AUTH_EXPIRED"){location.href="/account.html";return;}
+    $("loadingText").textContent="Nákup sa nepodarilo overiť. Obnovte stránku a skúste znova.";
   }
 }
 boot();
