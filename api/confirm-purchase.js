@@ -15,7 +15,7 @@ export default async function handler(req,res){
   if(!email||!["romantic","secrets","dare","afterdark","complete"].includes(product)) return res.status(400).json({error:"Missing purchase data"});
   const rr=await fetch("https://siferzggaubvtjlqdckj.supabase.co/rest/v1/entitlements?on_conflict=stripe_session_id",{
     method:"POST",
-    headers:{"apikey":supabaseSecret,"Authorization":`Bearer ${supabaseSecret}`,"Content-Type":"application/json","Prefer":"resolution=ignore-duplicates,return=minimal"},
+    headers:{"apikey":supabaseSecret,"Content-Type":"application/json","Prefer":"resolution=ignore-duplicates,return=minimal"},
     body:JSON.stringify({email,product_code:product,language:["sk","cz","pl","en"].includes(s.metadata?.language)?s.metadata.language:"sk",stripe_session_id:sessionId})
   });
   if(!rr.ok) return res.status(502).json({error:"Could not store entitlement"});
