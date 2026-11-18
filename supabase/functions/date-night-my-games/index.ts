@@ -1,21 +1,43 @@
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
-Deno.serve(async (req) => {
-  const h={"Content-Type":"application/json","Cache-Control":"no-store"};
-  if(req.method!=="POST")return new Response(JSON.stringify({error:"Method not allowed"}),{status:405,headers:h});
-  const bearer=req.headers.get("authorization")||"";
-  const token=bearer.match(/^Bearer\s+(\S+)$/i)?.[1];
-  if(!token)return new Response(JSON.stringify({error:"Sign in required"}),{status:401,headers:h});
-  const url=Deno.env.get("SUPABASE_URL")!;
-  const anon=Deno.env.get("SUPABASE_ANON_KEY")!;
-  const service=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+import postgres from "npm:postgres@3.4.7";
+
+const auth = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
+const database = postgres(Deno.env.get("SUPABASE_DB_URL")!, {
+  prepare: false, max: 1, idle_timeout: 10, connect_timeout: 5,
+});
+
+function reply(status: number, body: object) {
+  return Response.json(body, { status, headers: { "Cache-Control": "private, no-store" } });
+}
+
+Deno.serve(async (request) => {
+  if (request.method !== "POST") return reply(405, { error: "Method not allowed" });
+  const token = request.headers.get("authorization")?.match(/^Bearer\s+(\S+)$/i)?.[1];
+  if (!token) return reply(401, { error: "Sign in required" });
+
   try {
-    const auth=createClient(url,anon,{auth:{persistSession:false,autoRefreshToken:false}});
-    const {data:{user},error:authError}=await auth.auth.getUser(token);
-    if(authError && ![400,401,403,422].includes(authError.status ?? 0)) throw authError;
-    if(authError||!user?.id)return new Response(JSON.stringify({error:"Invalid session"}),{status:401,headers:h});
-    const admin=createClient(url,service,{auth:{persistSession:false,autoRefreshToken:false}});
-    const {data,error}=await admin.from("entitlements").select("product_code,purchased_at").eq("user_id",user.id);
-    if(error){console.error("Purchase query failed",error.code,error.message);return new Response(JSON.stringify({error:"Purchase lookup unavailable"}),{status:502,headers:h});}
-    return new Response(JSON.stringify({games:data||[]}),{status:200,headers:h});
-  }catch(e){console.error("Library edge error",String(e));return new Response(JSON.stringify({error:"Purchase lookup unavailable"}),{status:502,headers:h});}
+    const { data: { user }, error } = await auth.auth.getUser(token);
+    if (error && ![400, 401, 403, 422].includes(error.status ?? 0)) throw error;
+    if (!user?.id || error) return reply(401, { error: "Invalid session" });
+
+    // Keep the identity and role scoped to this transaction, even on a pooled connection.
+    // Querying Postgres directly avoids PostgREST rejecting the server JWT on clock skew.
+    const games = await database.begin("read only", async (sql) => {
+      await sql`set local role authenticated`;
+      await sql`select set_config('request.jwt.claim.sub', ${user.id}, true)`;
+      return await sql`
+        select product_code, purchased_at
+        from public.entitlements
+        where user_id = ${user.id}::uuid
+        order by purchased_at, product_code
+      `;
+    });
+    return reply(200, { games });
+  } catch (error) {
+    const code = (error as { code?: string; name?: string })?.code ?? (error as Error)?.name;
+    console.error("Date Night purchase lookup failed", code);
+    return reply(502, { error: "Purchase lookup unavailable" });
+  }
 });
