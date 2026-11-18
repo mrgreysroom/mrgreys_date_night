@@ -1,6 +1,7 @@
 import {capturePayment} from "./_acquisition.js";
 import { upsertMailerLiteContact } from "./_mailerlite.js";
 import crypto from "crypto";
+import { notifyOwnerOfPurchase } from "./_purchase-notification.js";
 
 export const config = {
   api: {
@@ -169,6 +170,14 @@ export default async function handler(req, res) {
     await upsertMailerLiteContact(email, groups);
   } catch (e) {
     console.error("MailerLite customer sync failed", e?.message || e);
+  }
+
+  try {
+    await notifyOwnerOfPurchase(session,email,product);
+  } catch (e) {
+    console.error("Owner purchase notification failed", e?.message || e);
+    // Retry through Stripe; entitlement and payment capture are idempotent.
+    return res.status(500).json({error:"Owner notification retry required"});
   }
 
   return res.status(200).json({
