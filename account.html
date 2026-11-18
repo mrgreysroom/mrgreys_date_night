@@ -15,7 +15,7 @@ label{font-size:13px;font-weight:850}input{width:100%;min-height:58px;margin-top
 <body><div class="wrap">
 <div class="brand"><img src="assets/mrgreys-x.jpg" alt="Mr Grey's Room"><div class="brandline">MR GREY'S ROOM</div></div>
 <h1>Moje hry</h1>
-<p class="sub">Vaše zakúpené balíčky zostávajú dostupné navždy. Prihlásenie funguje bez hesla cez bezpečný odkaz v e-maile.</p>
+<p class="sub">Otvorte si zakúpené hry. Prihlásite sa odkazom z e-mailu.</p>
 
 <section id="login" class="panel">
 <form id="magicForm">
@@ -28,9 +28,9 @@ label{font-size:13px;font-weight:850}input{width:100%;min-height:58px;margin-top
 
 <section id="library" class="panel hidden">
 <div class="email" id="userEmail"></div>
-<div class="games" id="games"></div>
-<div id="offlineBox" class="offlineBox"><div class="offlineTitle">OFFLINE HRANIE</div><div id="offlineText" class="offlineText">Offline hranie je voliteľné. Ak ho chcete používať, pripravte si hru ešte počas pripojenia na internet.</div><button id="offlineBtn" type="button">PRIPRAVIŤ HRU OFFLINE</button></div>
-<a class="btn secondary" href="/">SPÄŤ NA DATE NIGHT</a>
+<div class="games" id="games" aria-live="polite"></div>
+<details id="offlineBox" class="offlineBox hidden"><summary class="offlineTitle">Hranie bez internetu</summary><div id="offlineText" class="offlineText">Offline hranie je voliteľné. Ak ho chcete používať, pripravte si hru ešte počas pripojenia na internet.</div><button id="offlineBtn" type="button">PRIPRAVIŤ HRU OFFLINE</button></details>
+
 <div class="logout" id="logout">Odhlásiť sa</div>
 </section>
 </div>
@@ -42,7 +42,7 @@ const $=id=>document.getElementById(id);
 const OFFLINE_KEY="mrg_offline_access_v1";
 const OFFLINE_DAYS=30;
 const ALL_PRODUCTS=["romantic","secrets","dare","afterdark","complete"];
-let currentUser=null,currentEntitlements=[];
+let renderVersion=0;
 
 function saveOfflineAccess(user, rows){
   const products=[...new Set((rows||[]).map(x=>x.product_code).filter(Boolean))];
@@ -82,33 +82,48 @@ const products=[
   ["romantic","🖤 ROMANTIC"],["secrets","🔐 SECRETS"],["dare","😈 DARE"],["afterdark","🌙 AFTER DARK"],["complete","✕ X COMPLETE"]
 ];
 
-async function render(userFromAuth=null){
-  let user=userFromAuth;
-  if(!user){
-    const {data:{user:verifiedUser}}=await supabase.auth.getUser();
-    user=verifiedUser||null;
-  }
-  currentUser=user||null;
-  if(!user){$("login").classList.remove("hidden");$("library").classList.add("hidden");return;}
-  $("login").classList.add("hidden");$("library").classList.remove("hidden");$("userEmail").textContent=user.email||"";
+async function render(){
+  const version=++renderVersion;
+  const games=$("games"), offline=$("offlineBox");
   const {data:{session}}=await supabase.auth.getSession();
-  let data=null,error=null;
+  if(version!==renderVersion) return;
+  const user=session?.user;
+  $("login").classList.toggle("hidden",Boolean(user));
+  $("library").classList.toggle("hidden",!user);
+  offline.classList.add("hidden");
+  if(!user) return;
+  $("userEmail").textContent=user.email||"";
+  games.textContent="Načítavam zakúpené hry…";
   try {
-    if(!session?.access_token) throw new Error("Missing session");
     const response=await fetch("/api/my-games",{headers:{Authorization:"Bearer "+session.access_token},cache:"no-store"});
-    if(!response.ok) throw new Error("Game lookup failed: "+response.status);
-    const payload=await response.json();
-    data=payload.games;
-  }catch(e){error=e;}
-  if(error){$("games").innerHTML='<div class="msg">Nepodarilo sa načítať zakúpené hry. Skúste stránku obnoviť.</div>';refreshOfflineStatus();return;}
-  currentEntitlements=data||[];
-  saveOfflineAccess(user,currentEntitlements);
-  const owned=new Set((data||[]).map(x=>x.product_code));
-  if(owned.has("complete")){["romantic","secrets","dare","afterdark","complete"].forEach(x=>owned.add(x));}
-  $("games").innerHTML=products.map(([code,name])=>owned.has(code)
-? `<a href="/play.html?pack=${code}&lang=${window.MRG_LANGUAGE||'sk'}" class="game" style="text-decoration:none;color:inherit"><strong>${name}</strong><span class="status open">HRAŤ →</span></a>`
-: `<div class="game"><strong>${name}</strong><span class="status locked">ZAMKNUTÉ</span></div>`).join("");
-  refreshOfflineStatus();
+    if(version!==renderVersion) return;
+    if(response.status===401){
+      $("login").classList.remove("hidden");
+      $("library").classList.add("hidden");
+      $("loginMsg").textContent="Prihlásenie vypršalo. Vyžiadajte si nový odkaz.";
+      return;
+    }
+    if(!response.ok) throw new Error("Game lookup failed");
+    const {games:rows}=await response.json();
+    if(version!==renderVersion) return;
+    const owned=new Set(rows.map(row=>row.product_code));
+    const visible=products.filter(([code])=>owned.has("complete") ? code==="complete" : owned.has(code));
+    if(!visible.length){
+      games.textContent="Pod týmto e-mailom zatiaľ neevidujeme zakúpenú hru. Skontrolujte e-mail použitý pri nákupe.";
+      return;
+    }
+    const lang=encodeURIComponent(window.MRG_LANGUAGE||"sk");
+    games.innerHTML=visible.map(([code,name])=>
+      `<a class="btn" href="/play?pack=${code}&lang=${lang}">Spustiť ${name}</a>`
+    ).join("");
+    try {saveOfflineAccess(user,rows);} catch {}
+    offline.classList.remove("hidden");
+    refreshOfflineStatus();
+  }catch{
+    if(version!==renderVersion) return;
+    games.innerHTML='<div class="msg">Zakúpené hry sa nepodarilo načítať.</div><button id="retryGames" class="secondary" type="button">Skúsiť znova</button>';
+    $("retryGames").addEventListener("click",()=>render());
+  }
 }
 
 let resendTimer=null;
@@ -173,12 +188,11 @@ $("magicForm").addEventListener("submit",async e=>{
 $("offlineBtn").addEventListener("click",()=>prepareOffline(true));
 $("logout").addEventListener("click",async()=>{localStorage.removeItem(OFFLINE_KEY);await supabase.auth.signOut();render();});
 let authRenderTimer=null;
-supabase.auth.onAuthStateChange((event,session)=>{
+supabase.auth.onAuthStateChange(()=>{
   clearTimeout(authRenderTimer);
   authRenderTimer=setTimeout(()=>{
-    render(session?.user || null);
+    render();
   },0);
 });
 await registerOfflineWorker();
-setTimeout(()=>render(),0);
 </script></body></html>

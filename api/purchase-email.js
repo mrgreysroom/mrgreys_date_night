@@ -15,9 +15,9 @@ function html(product){
     <div style="font-size:27px;font-weight:700;margin:8px 0 30px">DATE NIGHT ✕</div>
     <div style="font-size:42px;line-height:1;color:#c052ff;margin-bottom:18px">✕</div>
     <h1 style="font-size:25px;line-height:1.25;margin:0 0 16px;color:#fff">${name} je váš.</h1>
-    <div style="font-size:16px;line-height:1.7;color:#cfc7d4">Ďakujeme za nákup. Platba prebehla úspešne a hra bola natrvalo priradená k e-mailu použitému pri objednávke.</div>
-    <a href="${SITE}/account.html" style="display:inline-block;margin-top:28px;padding:16px 26px;border-radius:999px;background:#a946d1;color:#fff;text-decoration:none;font-weight:700;letter-spacing:.5px">OTVORIŤ MOJE HRY ✕</a>
-    <div style="margin-top:26px;font-size:13px;line-height:1.65;color:#958b9a">Na stránke <strong style="color:#d9d0dd">Moje hry</strong> zadajte rovnaký e-mail. Pošleme vám bezpečný prihlasovací odkaz. Žiadne heslo si nemusíte pamätať.</div>
+    <div style="font-size:16px;line-height:1.7;color:#cfc7d4">Vaša hra je pripravená. Otvorte ju v sekcii Moje hry.</div>
+    <a href="${SITE}/account" style="display:inline-block;margin-top:28px;padding:16px 26px;border-radius:999px;background:#a946d1;color:#fff;text-decoration:none;font-weight:700;letter-spacing:.5px">Otvoriť moje hry</a>
+    <div style="margin-top:26px;font-size:13px;line-height:1.65;color:#958b9a">Ak ešte nie ste prihlásení, zadajte e-mail použitý pri nákupe.</div>
     <div style="margin-top:30px;border-top:1px solid #2e2635;padding-top:20px;font-size:11px;line-height:1.55;color:#756d7a">Toto je servisný e-mail k vášmu nákupu MR GREY’S DATE NIGHT.</div>
   </td></tr></table></td></tr></table></body></html>`;
 }
