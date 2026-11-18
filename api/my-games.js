@@ -13,9 +13,11 @@ export default async function handler(req, res) {
     if (!auth.ok) return res.status(401).json({error:"Session expired"});
     const user=await auth.json();
     if (!user?.id || !user?.email) return res.status(401).json({error:"Invalid session"});
-    const query=new URLSearchParams({select:"product_code,purchased_at"});
+    const secret=process.env.SUPABASE_SECRET_KEY;
+    if(!secret || !secret.startsWith("sb_secret_")) return res.status(503).json({error:"Service configuration unavailable"});
+    const query=new URLSearchParams({select:"product_code,purchased_at",user_id:"eq."+user.id});
     const rr=await fetch(base+"/rest/v1/entitlements?"+query,{
-      headers:{apikey:"sb_publishable_5V6HZj-kn5B9CVFWrGDR8g_xEWKdJwu",Authorization:"Bearer "+token},
+      headers:{apikey:secret},
       signal:AbortSignal.timeout(10000)
     });
     if (!rr.ok) {console.error("my-games database lookup failed",rr.status,await rr.text());return res.status(502).json({error:"Purchase lookup unavailable"});}
